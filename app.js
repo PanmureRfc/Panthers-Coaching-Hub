@@ -763,95 +763,198 @@ const DIAGRAMS = [{
   desc: "New this season — one defender beside the thrower, rest 3m back"
 }];
 
-// ── LAWS ─────────────────────────────────────────────────────
-const LAW_TILES = [{
-  title: "Players",
-  value: "6 v 6 mixed (max 3 subs)",
-  icon: "👥"
+// ── AGE GROUPS & LAWS ────────────────────────────────────────
+const AGES = [{
+  id: "u10",
+  label: "U10",
+  full: "U10 / P5",
+  strapline: "Refine the Core Skills",
+  tiles: [{
+    title: "Players",
+    value: "6 v 6 mixed (max 3 subs)",
+    icon: "👥"
+  }, {
+    title: "Pitch",
+    value: "40m × 30m",
+    icon: "📐"
+  }, {
+    title: "Ball",
+    value: "Size 3",
+    icon: "🏉"
+  }, {
+    title: "Game length",
+    value: "Max 10 min per game",
+    icon: "⏱️"
+  }, {
+    title: "Festival",
+    value: "Max 60 min playing time",
+    icon: "🏆"
+  }, {
+    title: "Scoring",
+    value: "3-2-1 (per player)",
+    icon: "🔢"
+  }, {
+    title: "Tackle",
+    value: "Waist & below + Tackle Hold",
+    icon: "🤝"
+  }, {
+    title: "Breakdown",
+    value: "None — offload or pass",
+    icon: "❌"
+  }, {
+    title: "Knock on",
+    value: "Play on if two hands",
+    icon: "✅"
+  }, {
+    title: "Hand off",
+    value: "Not allowed",
+    icon: "🚫"
+  }, {
+    title: "Kicking",
+    value: "None in open play",
+    icon: "🚫"
+  }, {
+    title: "Scrum & lineout",
+    value: "Free pass instead",
+    icon: "📋"
+  }],
+  cards: [{
+    title: "3-2-1 Scoring",
+    icon: "🔢",
+    body: "Per player, not per team. Each player's 1st try is 3 points, 2nd is 2, every one after is 1. Three tries by three different players beats three by one player, 9–6. Coach it live: get it to someone who hasn't scored."
+  }, {
+    title: "Knock On, Play On",
+    icon: "✅",
+    body: "Two-handed attempt at the catch and it goes down — play continues. One-handed attempt — free pass to the other team. SRU want us sympathetic while they learn to handle under pressure. Praise the attempt."
+  }, {
+    title: "Tackle Hold",
+    icon: "🤝",
+    body: "Rewards a tackler who stops or significantly slows the carrier but can't get them down. Referee waits about 2 seconds for an offload then calls 'Tackle Complete'. Carrier stops and passes to the nearest player. Defenders retire 1m."
+  }, {
+    title: "Post Tackle — No Breakdown",
+    icon: "❌",
+    body: "On the ground the carrier presents (arriving player must pass) or offloads from the floor (receiver can run or pass). Tackler releases and retires 1m from the hindmost point. Nobody competes for the ball."
+  }, {
+    title: "Tackle Height",
+    icon: "🎯",
+    body: "On or below the waist. Above that is a free pass. No swing tackles — the tackler is responsible for bringing the carrier down safely. Referees may play advantage if height creeps up but the carrier can still pass."
+  }, {
+    title: "Restarts",
+    icon: "🔄",
+    body: "Start: any kick from the centre, must travel 5m, receivers 5m back. After a try: free pass at centre to the team that CONCEDED, defence 3m back. After an offence: free pass where it happened, defence 3m back."
+  }, {
+    title: "Ball Out of Play",
+    icon: "↩️",
+    body: "Free pass to the team that did not touch it last. One defender stands next to the attacker throwing in, the rest are 3m back from where it went out."
+  }, {
+    title: "Half Game Policy",
+    icon: "👥",
+    body: "Every player gets equal game time. Not affected by ability. With 10-minute games and a 60-minute festival cap, work the rotation out before you arrive rather than on the touchline."
+  }]
 }, {
-  title: "Pitch",
-  value: "40m × 30m",
-  icon: "📐"
-}, {
-  title: "Ball",
-  value: "Size 3",
-  icon: "🏉"
-}, {
-  title: "Game length",
-  value: "Max 10 min per game",
-  icon: "⏱️"
-}, {
-  title: "Festival",
-  value: "Max 60 min playing time",
-  icon: "🏆"
-}, {
-  title: "Scoring",
-  value: "3-2-1 (per player)",
-  icon: "🔢"
-}, {
-  title: "Tackle",
-  value: "Waist & below + Tackle Hold",
-  icon: "🤝"
-}, {
-  title: "Breakdown",
-  value: "None — offload or pass",
-  icon: "❌"
-}, {
-  title: "Knock on",
-  value: "Play on if two hands",
-  icon: "✅"
-}, {
-  title: "Hand off",
-  value: "Not allowed",
-  icon: "🚫"
-}, {
-  title: "Kicking",
-  value: "None in open play",
-  icon: "🚫"
-}, {
-  title: "Scrum & lineout",
-  value: "Free pass instead",
-  icon: "📋"
+  id: "u12",
+  label: "U12",
+  full: "U12 / P7",
+  strapline: "Ready for the Big Game",
+  tiles: [{
+    title: "Players",
+    value: "10 v 10 mixed (max 5 subs)",
+    icon: "👥"
+  }, {
+    title: "Pitch",
+    value: "60m × 40m (5m in-goals)",
+    icon: "📐"
+  }, {
+    title: "Ball",
+    value: "Size 3 or 4",
+    icon: "🏉"
+  }, {
+    title: "Game length",
+    value: "Max 40 min per game",
+    icon: "⏱️"
+  }, {
+    title: "Festival",
+    value: "Max 60 min playing time",
+    icon: "🏆"
+  }, {
+    title: "Scoring",
+    value: "3-2-1 or 1 point per try",
+    icon: "🔢"
+  }, {
+    title: "Tackle",
+    value: "Waist & below",
+    icon: "🤝"
+  }, {
+    title: "Breakdown",
+    value: "Up to 2 supporting players",
+    icon: "⚔️"
+  }, {
+    title: "Hand off",
+    value: "Allowed — not head or neck",
+    icon: "✋"
+  }, {
+    title: "Kicking",
+    value: "From hand, yes",
+    icon: "🦶"
+  }, {
+    title: "Scrum",
+    value: "5v5, contested hook",
+    icon: "🐏"
+  }, {
+    title: "Lineout",
+    value: "Hooker + 4, uncontested",
+    icon: "🙌"
+  }],
+  cards: [{
+    title: "The Breakdown",
+    icon: "⚔️",
+    body: "Up to 2 supporting players per team — a 2v2 contest. The tackler may release, get to their feet and be first in, and the defence can still add 2. Arriving players must support their own body weight when jackaling and come through the gate. Offside line is the hindmost point; defence can't move until the ball is played. Sanction is a free kick, defence 5m back."
+  }, {
+    title: "Scrum",
+    icon: "🐏",
+    body: "5 nearest players from each team. Both hookers may strike for the ball. No pushing — a resisted lean, with feet back and knees dropped towards the floor. Attacking scrum half must pass immediately. Defending scrum half stays at the mid-point until the ball is passed. Crouch, Bind, Set: ear to ear with heads left, props bind high and long."
+  }, {
+    title: "Lineout",
+    icon: "🙌",
+    body: "5 nearest players — hooker plus 4. Uncontested: the throwing team wins it. The catcher must pass immediately to the scrum half. The attacking 9 must pass or run beyond the back of the lineout, never through it. Defending hooker and 9 stand 2m from the middle. Everyone else 5m back until the ball crosses the rear."
+  }, {
+    title: "Hand Offs",
+    icon: "✋",
+    body: "Allowed now, but no contact to the head or neck of the tackler — free kick if it happens. Encourage two hands on the ball as the default, and evasive footwork to beat the defender before reaching for a hand off."
+  }, {
+    title: "Kicking",
+    icon: "🦶",
+    body: "Attacking kicks from hand are permitted — chips and grubbers are the ones to encourage. A ball on the ground cannot be kicked; they must pick it up. Free kick to the other team if they do."
+  }, {
+    title: "Restarts",
+    icon: "🔄",
+    body: "Careful — this reverses from U10. The game starts with a drop kick at the centre, at least 5m, receivers 5m back. After a try the team that SCORES restarts with a drop kick. After an offence it's a tapped free kick where it happened, defence 5m back."
+  }, {
+    title: "Tackle Height",
+    icon: "🎯",
+    body: "Still on or below the waist — free kick above it. No swing tackles; the tackler brings the carrier down safely. Referees may play advantage if a tackle drifts just above the green zone (never head or neck) and the carrier can still pass."
+  }, {
+    title: "In-goal & Dead Ball",
+    icon: "🥅",
+    body: "If an attacking kick goes over the dead ball line, or into the in-goal and is touched down by a defender, play restarts with a tap and pass on the 15m line to the defending team, with defenders 5m back."
+  }, {
+    title: "Scoring",
+    icon: "🔢",
+    body: "Either 3-2-1 or a straight point per try. Under 3-2-1 a player's first try is 3, second is 2, and every one after is 1 — so three different scorers beat one player scoring three."
+  }, {
+    title: "Half Game Policy",
+    icon: "👥",
+    body: "Every player gets equal game time, regardless of ability. Max 40 minutes per game, 60 minutes of playing time across a festival."
+  }]
 }];
-const LAW_CARDS = [{
-  title: "3-2-1 Scoring",
-  icon: "🔢",
-  body: "Per player, not per team. Each player's 1st try is 3 points, 2nd is 2, every one after is 1. Three tries by three different players beats three by one player, 9–6. Coach it live: get it to someone who hasn't scored."
-}, {
-  title: "Knock On, Play On",
-  icon: "✅",
-  body: "Two-handed attempt at the catch and it goes down — play continues. One-handed attempt — free pass to the other team. SRU want us sympathetic while they learn to handle under pressure. Praise the attempt."
-}, {
-  title: "Tackle Hold",
-  icon: "🤝",
-  body: "Rewards a tackler who stops or significantly slows the carrier but can't get them down. Referee waits about 2 seconds for an offload then calls 'Tackle Complete'. Carrier stops and passes to the nearest player. Defenders retire 1m."
-}, {
-  title: "Post Tackle — No Breakdown",
-  icon: "❌",
-  body: "On the ground the carrier presents (arriving player must pass) or offloads from the floor (receiver can run or pass). Tackler releases and retires 1m from the hindmost point. Nobody competes for the ball."
-}, {
-  title: "Tackle Height",
-  icon: "🎯",
-  body: "On or below the waist. Above that is a free pass. No swing tackles — the tackler is responsible for bringing the carrier down safely. Referees may play advantage if height creeps up but the carrier can still pass."
-}, {
-  title: "Restarts",
-  icon: "🔄",
-  body: "Start: any kick from the centre, must travel 5m, receivers 5m back. After a try: free pass at centre to the team that conceded, defence 3m back. After an offence: free pass where it happened, defence 3m back."
-}, {
-  title: "Ball Out of Play",
-  icon: "↩️",
-  body: "Free pass to the team that did not touch it last. New: one defender stands next to the attacker throwing in, the rest are 3m back from where it went out."
-}, {
-  title: "Half Game Policy",
-  icon: "👥",
-  body: "Every player gets equal game time. Not affected by ability. With 10-minute games and a 60-minute festival cap, work the rotation out before you arrive rather than on the touchline."
-}];
+const findAge = id => AGES.find(a => a.id === id) || AGES[0];
 
 // ── DRILLS ───────────────────────────────────────────────────
 const DRILLS = [{
   id: 1,
   name: "Chicken, Hero, Duck",
   cat: "Warm-Up",
+  ages: ["u10", "u12"],
   dur: 12,
   energy: "high",
   players: "8+",
@@ -863,6 +966,7 @@ const DRILLS = [{
   id: 2,
   name: "Toilet Tig",
   cat: "Warm-Up",
+  ages: ["u10", "u12"],
   dur: 10,
   energy: "high",
   players: "8+",
@@ -874,6 +978,7 @@ const DRILLS = [{
   id: 3,
   name: "Relay Circuit",
   cat: "Warm-Up",
+  ages: ["u10", "u12"],
   dur: 12,
   energy: "high",
   players: "8+",
@@ -885,6 +990,7 @@ const DRILLS = [{
   id: 4,
   name: "Two-Line Passing",
   cat: "Handling",
+  ages: ["u10", "u12"],
   dur: 15,
   energy: "medium",
   players: "8+",
@@ -896,6 +1002,7 @@ const DRILLS = [{
   id: 17,
   name: "4 Corners",
   cat: "Handling",
+  ages: ["u10", "u12"],
   dur: 15,
   energy: "medium",
   players: "8+",
@@ -907,6 +1014,7 @@ const DRILLS = [{
   id: 5,
   name: "5 Pass",
   cat: "Handling",
+  ages: ["u10", "u12"],
   dur: 12,
   energy: "medium",
   players: "8+",
@@ -918,6 +1026,7 @@ const DRILLS = [{
   id: 6,
   name: "Money Ball",
   cat: "Handling",
+  ages: ["u10", "u12"],
   dur: 12,
   energy: "medium",
   players: "8+",
@@ -929,6 +1038,7 @@ const DRILLS = [{
   id: 7,
   name: "5 Pass Breakout",
   cat: "Handling",
+  ages: ["u10", "u12"],
   dur: 12,
   energy: "high",
   players: "8+",
@@ -940,6 +1050,7 @@ const DRILLS = [{
   id: 8,
   name: "Hawick Ball",
   cat: "Handling",
+  ages: ["u10", "u12"],
   dur: 12,
   energy: "high",
   players: "10+",
@@ -951,6 +1062,7 @@ const DRILLS = [{
   id: 9,
   name: "Disco Touch",
   cat: "Handling",
+  ages: ["u10", "u12"],
   dur: 15,
   energy: "high",
   players: "8+",
@@ -962,6 +1074,7 @@ const DRILLS = [{
   id: 10,
   name: "Tackle 1 — Ground Confidence",
   cat: "Tackle",
+  ages: ["u10", "u12"],
   dur: 12,
   energy: "medium",
   players: "6+",
@@ -973,6 +1086,7 @@ const DRILLS = [{
   id: 11,
   name: "Tackle 2 — Kneeling",
   cat: "Tackle",
+  ages: ["u10", "u12"],
   dur: 15,
   energy: "medium",
   players: "6+",
@@ -984,6 +1098,7 @@ const DRILLS = [{
   id: 12,
   name: "Tackle 3 — Walking, From the Side",
   cat: "Tackle",
+  ages: ["u10", "u12"],
   dur: 15,
   energy: "medium",
   players: "6+",
@@ -995,6 +1110,7 @@ const DRILLS = [{
   id: 13,
   name: "Tackle 4 — Moving, From the Front",
   cat: "Tackle",
+  ages: ["u10", "u12"],
   dur: 15,
   energy: "high",
   players: "6+",
@@ -1006,6 +1122,7 @@ const DRILLS = [{
   id: 14,
   name: "Tackle 5 — The Tackle Hold",
   cat: "Tackle",
+  ages: ["u10"],
   dur: 15,
   energy: "high",
   players: "6+",
@@ -1017,6 +1134,7 @@ const DRILLS = [{
   id: 15,
   name: "Tackle 6 — Live 1v1 and 2v2",
   cat: "Tackle",
+  ages: ["u10", "u12"],
   dur: 15,
   energy: "high",
   players: "8+",
@@ -1025,9 +1143,22 @@ const DRILLS = [{
   points: ["Foot close, squeeze and hold", "First there is 9", "Get up and get back 1m"],
   tip: "Name the low wrap loudly when you see it. Say nothing when a tackle comes off a shirt grab — what you praise is what you get."
 }, {
+  id: 18,
+  name: "10v10 Game",
+  cat: "Game",
+  ages: ["u12"],
+  dur: 20,
+  energy: "high",
+  players: "20+",
+  equip: "Cones, bibs, 1 ball",
+  desc: "Full game on 60x40 applying whatever the session worked on. Scrums, lineouts and a 2v2 breakdown all live.",
+  points: ["Apply what we practised", "Two supporting players at the breakdown, no more", "Through the gate, on your feet"],
+  tip: "Referee the breakdown numbers strictly early on. If four arrive it stops being a contest and becomes a pile."
+}, {
   id: 16,
   name: "6v6 Game",
   cat: "Game",
+  ages: ["u10"],
   dur: 15,
   energy: "high",
   players: "12+",
@@ -1041,46 +1172,49 @@ const setAllDrills = list => {
   ALL_DRILLS = list;
 };
 const findDrill = id => ALL_DRILLS.find(d => String(d.id) === String(id));
-const APP_VERSION = "v7";
+const APP_VERSION = "v8";
 
 // ── BLOCK 1 ──────────────────────────────────────────────────
-const BLOCK = [{
-  n: 1,
-  theme: "Two hands · Getting comfortable on the ground",
-  points: ["Two hands on the ball, every time", "Head up — where's the space?", "The ground isn't scary"],
-  drills: [2, 4, 5, 10, 1],
-  why: "The knock-on law is the change they'll notice first. Embed 'two hands' in week one and it does the work all season. No tackling today — ground confidence comes first."
-}, {
-  n: 2,
-  theme: "Support · Kneeling tackles",
-  points: ["Stay close enough to pass", "Cheek to cheek", "Squeeze and hold"],
-  drills: [1, 17, 5, 11, 16],
-  why: "Duck is the same picture as the post-tackle law — carrier plus one close support player. Say that to them."
-}, {
-  n: 3,
-  theme: "Staying in your space · Walking tackles",
-  points: ["Spread out — arm's length plus", "Foot close", "Eyes open, chin off your chest"],
-  drills: [3, 7, 8, 12, 16],
-  why: "The 40x30 pitch is the biggest practical change this season. Kids who defended fine at P4 get beaten outside until they learn to spread and move up together."
-}, {
-  n: 4,
-  theme: "First there is 9 · Tackling from the front",
-  points: ["First there is 9, second is 10, everyone else spreads", "Foot close, eyes open", "Get up and get back 1m"],
-  drills: [2, 6, 13, 16],
-  why: "Condition the game so only the first arriving player may touch the ball on the ground. They stop swarming because swarming stops working, not because they've been told off."
-}, {
-  n: 5,
-  theme: "The Tackle Hold",
-  points: ["Stop them and hold on", "Held up? Stop and pass to the nearest player", "Tacklers — release and get back 1m"],
-  drills: [1, 4, 9, 14, 16],
-  why: "Referees call 'Tackle Complete' at festivals. Rehearse the phrase so nobody stands still when they hear it for real."
-}, {
-  n: 6,
-  theme: "Putting it together · 3-2-1",
-  points: ["Who hasn't scored yet?", "First there is 9, everyone else spreads", "Foot close, squeeze and hold"],
-  drills: [2, 9, 8, 15, 16],
-  why: "Under 3-2-1, three different scorers beat one player scoring three. Playing it out loud teaches unselfishness without anyone being told off for being greedy."
-}];
+const BLOCKS = {
+  u10: [{
+    n: 1,
+    theme: "Two hands · Getting comfortable on the ground",
+    points: ["Two hands on the ball, every time", "Head up — where's the space?", "The ground isn't scary"],
+    drills: [2, 4, 5, 10, 1],
+    why: "The knock-on law is the change they'll notice first. Embed 'two hands' in week one and it does the work all season. No tackling today — ground confidence comes first."
+  }, {
+    n: 2,
+    theme: "Support · Kneeling tackles",
+    points: ["Stay close enough to pass", "Cheek to cheek", "Squeeze and hold"],
+    drills: [1, 17, 5, 11, 16],
+    why: "Duck is the same picture as the post-tackle law — carrier plus one close support player. Say that to them."
+  }, {
+    n: 3,
+    theme: "Staying in your space · Walking tackles",
+    points: ["Spread out — arm's length plus", "Foot close", "Eyes open, chin off your chest"],
+    drills: [3, 7, 8, 12, 16],
+    why: "The 40x30 pitch is the biggest practical change this season. Kids who defended fine at P4 get beaten outside until they learn to spread and move up together."
+  }, {
+    n: 4,
+    theme: "First there is 9 · Tackling from the front",
+    points: ["First there is 9, second is 10, everyone else spreads", "Foot close, eyes open", "Get up and get back 1m"],
+    drills: [2, 6, 13, 16],
+    why: "Condition the game so only the first arriving player may touch the ball on the ground. They stop swarming because swarming stops working, not because they've been told off."
+  }, {
+    n: 5,
+    theme: "The Tackle Hold",
+    points: ["Stop them and hold on", "Held up? Stop and pass to the nearest player", "Tacklers — release and get back 1m"],
+    drills: [1, 4, 9, 14, 16],
+    why: "Referees call 'Tackle Complete' at festivals. Rehearse the phrase so nobody stands still when they hear it for real."
+  }, {
+    n: 6,
+    theme: "Putting it together · 3-2-1",
+    points: ["Who hasn't scored yet?", "First there is 9, everyone else spreads", "Foot close, squeeze and hold"],
+    drills: [2, 9, 8, 15, 16],
+    why: "Under 3-2-1, three different scorers beat one player scoring three. Playing it out loud teaches unselfishness without anyone being told off for being greedy."
+  }],
+  u12: []
+};
 const SESSION_TYPES = {
   sunday: {
     label: "Sunday",
@@ -1112,8 +1246,9 @@ const shortLabel = (d, i) => (i === 0 ? "This " : "") + d.toLocaleDateString("en
   day: "numeric",
   month: "short"
 });
-const blankPlan = () => ({
+const blankPlan = (age = "u10") => ({
   id: Date.now(),
+  age,
   date: "",
   type: "sunday",
   theme: "",
@@ -1133,7 +1268,7 @@ function buildMessage(plan, dn = d => d.name) {
     day: "numeric",
     month: "long"
   }) : t.label;
-  const lines = [`🐆 *PANTHERS U10* — ${when}`, ""];
+  const lines = [`🐆 *PANTHERS ${(plan.age || "u10").toUpperCase()}* — ${when}`, ""];
   if (plan.theme) lines.push(`*${plan.theme}*`, "");
   const pts = plan.points.filter(p => p);
   if (pts.length) {
@@ -1295,15 +1430,31 @@ function ShareSheet({
 // ── TABS ─────────────────────────────────────────────────────
 function BlockTab({
   loadBlock,
-  dn
+  dn,
+  age
 }) {
+  const block = BLOCKS[age] || [];
   return /*#__PURE__*/React.createElement("div", {
     style: {
       padding: 14
     }
   }, /*#__PURE__*/React.createElement(Card, {
     title: "Block 1 — six Sundays"
+  }, block.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    style: S.empty
   }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 30,
+      marginBottom: 10
+    }
+  }, "🐆"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: C.muted,
+      lineHeight: 1.6,
+      maxWidth: 380,
+      margin: "0 auto"
+    }
+  }, "No ready-made sessions for ", findAge(age).full, " yet. Build one in the Planner, or add drills in the Draw tab and they'll show up here for everyone.")) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
       color: C.muted,
       fontSize: 13,
@@ -1323,7 +1474,7 @@ function BlockTab({
       gap: 14,
       marginTop: 16
     }
-  }, BLOCK.map(b => /*#__PURE__*/React.createElement("div", {
+  }, block.map(b => /*#__PURE__*/React.createElement("div", {
     key: b.n,
     style: S.libCard
   }, /*#__PURE__*/React.createElement("div", {
@@ -1390,7 +1541,7 @@ function BlockTab({
       marginTop: 12,
       width: "100%"
     }
-  }, "Use this session"))))));
+  }, "Use this session")))))));
 }
 function PlannerTab(props) {
   const {
@@ -1585,7 +1736,7 @@ function PlannerTab(props) {
       flex: 1
     }
   }, "Save"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setPlan(blankPlan()),
+    onClick: () => setPlan(blankPlan(plan.age)),
     style: {
       ...S.btnGhost,
       flex: 1
@@ -1656,7 +1807,7 @@ function PlannerTab(props) {
       flexWrap: "wrap",
       justifyContent: "center"
     }
-  }, BLOCK.map(b => /*#__PURE__*/React.createElement("button", {
+  }, (BLOCKS[plan.age] || []).map(b => /*#__PURE__*/React.createElement("button", {
     key: b.n,
     onClick: () => loadBlock(b),
     style: S.blockBtn
@@ -2340,13 +2491,16 @@ function SavedTab({
     }
   }, "Delete")))))));
 }
-function LawsTab() {
+function LawsTab({
+  age
+}) {
+  const A = findAge(age);
   return /*#__PURE__*/React.createElement("div", {
     style: {
       padding: 14
     }
   }, /*#__PURE__*/React.createElement(Card, {
-    title: "U10 / P5 — Age Grade Law Variations"
+    title: A.full + " — Age Grade Law Variations"
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       color: C.muted,
@@ -2357,14 +2511,14 @@ function LawsTab() {
     style: {
       color: C.gold
     }
-  }, "Refine the Core Skills"), " — same skills as P4, bigger pitch, more players."), /*#__PURE__*/React.createElement("div", {
+  }, A.strapline)), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
       gridTemplateColumns: "repeat(auto-fill,minmax(150px,1fr))",
       gap: 10,
       marginBottom: 22
     }
-  }, LAW_TILES.map(l => /*#__PURE__*/React.createElement("div", {
+  }, A.tiles.map(l => /*#__PURE__*/React.createElement("div", {
     key: l.title,
     style: S.lawTile
   }, /*#__PURE__*/React.createElement("div", {
@@ -2390,7 +2544,7 @@ function LawsTab() {
       gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))",
       gap: 14
     }
-  }, LAW_CARDS.map(l => /*#__PURE__*/React.createElement("div", {
+  }, A.cards.map(l => /*#__PURE__*/React.createElement("div", {
     key: l.title,
     style: S.libCard
   }, /*#__PURE__*/React.createElement("div", {
@@ -3589,9 +3743,10 @@ function Logo() {
 
 function App() {
   const [tab, setTab] = useState("block");
+  const [age, setAge] = useState("u10");
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [plan, setPlan] = useState(blankPlan());
+  const [plan, setPlan] = useState(blankPlan("u10"));
   const [cat, setCat] = useState("All");
   const [sel, setSel] = useState("nine");
   const [stand, setStand] = useState("defend");
@@ -3603,31 +3758,43 @@ function App() {
   const [diagrams, setDiagrams] = useState([]);
   const [shareText, setShareText] = useState(null);
   const [copied, setCopied] = useState(false);
+
+  // Each age group has its own data. U10 falls back to the original keys so
+  // anything saved before the age groups existed is still there.
+  const loadKey = async (base, setter, fallback) => {
+    for (const key of [`${base}-${age}`, ...(fallback ? [base] : [])]) {
+      try {
+        const r = await window.storage.get(key, true);
+        if (r?.value) {
+          setter(JSON.parse(r.value));
+          return;
+        }
+      } catch {/* try the next one */}
+    }
+    setter([]);
+  };
   useEffect(() => {
     (async () => {
+      setLoading(true);
+      const first = age === "u10";
+      await loadKey("panthers-sessions", setPlans, first);
+      await loadKey("panthers-diagrams", setDiagrams, first);
+      await loadKey("panthers-hidden", setHidden, first);
+      await loadKey("panthers-my-drills", setMyDrills, first);
       try {
-        const r = await window.storage.get("panthers-sessions", true);
-        if (r?.value) setPlans(JSON.parse(r.value));
-      } catch {/* nothing saved yet */}
-      try {
-        const d = await window.storage.get("panthers-diagrams", true);
-        if (d?.value) setDiagrams(JSON.parse(d.value));
-      } catch {/* none yet */}
-      try {
-        const n = await window.storage.get("panthers-drill-names", true);
-        if (n?.value) setNames(JSON.parse(n.value));
-      } catch {/* none yet */}
-      try {
-        const h = await window.storage.get("panthers-hidden", true);
-        if (h?.value) setHidden(JSON.parse(h.value));
-      } catch {/* none yet */}
-      try {
-        const md = await window.storage.get("panthers-my-drills", true);
-        if (md?.value) setMyDrills(JSON.parse(md.value));
-      } catch {/* none yet */}
+        const n = await window.storage.get(`panthers-drill-names-${age}`, true);
+        setNames(n?.value ? JSON.parse(n.value) : {});
+      } catch {
+        try {
+          const n2 = await window.storage.get("panthers-drill-names", true);
+          setNames(n2?.value && first ? JSON.parse(n2.value) : {});
+        } catch {
+          setNames({});
+        }
+      }
       setLoading(false);
     })();
-  }, []);
+  }, [age]);
   const flash = m => {
     setToast(m);
     setTimeout(() => setToast(""), 2600);
@@ -3635,7 +3802,7 @@ function App() {
   const persist = async next => {
     setPlans(next);
     try {
-      await window.storage.set("panthers-sessions", JSON.stringify(next), true);
+      await window.storage.set(`panthers-sessions-${age}`, JSON.stringify(next), true);
     } catch {
       flash("Saved on this device only — couldn't reach shared storage");
     }
@@ -3670,7 +3837,7 @@ function App() {
   const persistDiagrams = async next => {
     setDiagrams(next);
     try {
-      await window.storage.set("panthers-diagrams", JSON.stringify(next), true);
+      await window.storage.set(`panthers-diagrams-${age}`, JSON.stringify(next), true);
     } catch {
       flash("Saved on this device only");
     }
@@ -3679,7 +3846,7 @@ function App() {
   const persistHidden = async next => {
     setHidden(next);
     try {
-      await window.storage.set("panthers-hidden", JSON.stringify(next), true);
+      await window.storage.set(`panthers-hidden-${age}`, JSON.stringify(next), true);
     } catch {/* offline */}
   };
   const hide = id => {
@@ -3697,7 +3864,7 @@ function App() {
   const persistDrills = async next => {
     setMyDrills(next);
     try {
-      await window.storage.set("panthers-my-drills", JSON.stringify(next), true);
+      await window.storage.set(`panthers-my-drills-${age}`, JSON.stringify(next), true);
     } catch {
       flash("Saved on this device only");
     }
@@ -3720,7 +3887,7 @@ function App() {
     });
     setTab("builder");
   };
-  const allDrills = [...DRILLS, ...myDrills];
+  const allDrills = [...DRILLS.filter(d => !d.ages || d.ages.includes(age)), ...myDrills];
   setAllDrills(allDrills);
   const dn = d => d ? names[d.id] || d.name : "";
   const rename = async (id, custom) => {
@@ -3730,7 +3897,7 @@ function App() {
     if (custom) next[id] = custom;else delete next[id];
     setNames(next);
     try {
-      await window.storage.set("panthers-drill-names", JSON.stringify(next), true);
+      await window.storage.set(`panthers-drill-names-${age}`, JSON.stringify(next), true);
     } catch {
       flash("Renamed here only — couldn't reach shared storage");
     }
@@ -3744,6 +3911,7 @@ function App() {
   const loadBlock = b => {
     setPlan({
       id: Date.now(),
+      age,
       date: "",
       type: "sunday",
       theme: `Session ${b.n} — ${b.theme}`,
@@ -3780,11 +3948,34 @@ function App() {
     }
   }, /*#__PURE__*/React.createElement(Logo, null), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Wordmark, null), /*#__PURE__*/React.createElement("div", {
     style: S.sub
-  }, "U10 · P5 Age Group"))), /*#__PURE__*/React.createElement("div", {
+  }, findAge(age).full, " · ", findAge(age).strapline))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "flex-end",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 5
+    }
+  }, AGES.map(a => /*#__PURE__*/React.createElement("button", {
+    key: a.id,
+    onClick: () => {
+      setAge(a.id);
+      setPlan(blankPlan(a.id));
+    },
+    style: {
+      ...S.ageBtn,
+      ...(age === a.id ? S.ageBtnOn : {})
+    }
+  }, a.label))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 6,
-      flexWrap: "wrap"
+      flexWrap: "wrap",
+      justifyContent: "flex-end"
     }
   }, [["block", "Sessions"], ["planner", "Planner"], ["visuals", "Visuals"], ["players", "Players"], ["builder", "Draw"], ["library", "Drills"], ["saved", "Saved"], ["laws", "Laws"]].map(([k, l]) => /*#__PURE__*/React.createElement("button", {
     key: k,
@@ -3793,7 +3984,7 @@ function App() {
       ...S.navBtn,
       ...(tab === k ? S.navBtnOn : {})
     }
-  }, l)))), /*#__PURE__*/React.createElement("div", {
+  }, l))))), /*#__PURE__*/React.createElement("div", {
     style: S.values
   }, "Respect · Teamwork · Enjoyment ", /*#__PURE__*/React.createElement("span", {
     style: {
@@ -3808,7 +3999,8 @@ function App() {
     }
   }, APP_VERSION)), tab === "block" && /*#__PURE__*/React.createElement(BlockTab, {
     loadBlock: loadBlock,
-    dn: dn
+    dn: dn,
+    age: age
   }), tab === "planner" && /*#__PURE__*/React.createElement(PlannerTab, {
     plan,
     setPlan,
@@ -3864,14 +4056,16 @@ function App() {
       setTab("planner");
     },
     newPlan: () => {
-      setPlan(blankPlan());
+      setPlan(blankPlan(age));
       setTab("planner");
     },
     deletePlan: deletePlan,
     loading: loading,
     share: share,
     dn: dn
-  }), tab === "laws" && /*#__PURE__*/React.createElement(LawsTab, null), shareText && /*#__PURE__*/React.createElement(ShareSheet, {
+  }), tab === "laws" && /*#__PURE__*/React.createElement(LawsTab, {
+    age: age
+  }), shareText && /*#__PURE__*/React.createElement(ShareSheet, {
     text: shareText,
     onClose: () => setShareText(null),
     onCopy: doCopy,
@@ -3937,6 +4131,23 @@ const S = {
     marginTop: 7,
     textTransform: "uppercase",
     fontWeight: 700
+  },
+  ageBtn: {
+    background: "transparent",
+    border: `1px solid ${C.line}`,
+    color: C.muted,
+    padding: "6px 16px",
+    borderRadius: 2,
+    cursor: "pointer",
+    fontSize: 13,
+    fontFamily: "inherit",
+    fontWeight: 800,
+    letterSpacing: 1.5
+  },
+  ageBtnOn: {
+    background: C.maroon,
+    color: C.white,
+    border: `1px solid ${C.maroon}`
   },
   navBtn: {
     background: "transparent",
