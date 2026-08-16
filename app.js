@@ -1041,7 +1041,7 @@ const setAllDrills = list => {
   ALL_DRILLS = list;
 };
 const findDrill = id => ALL_DRILLS.find(d => String(d.id) === String(id));
-const APP_VERSION = "v6";
+const APP_VERSION = "v7";
 
 // ── BLOCK 1 ──────────────────────────────────────────────────
 const BLOCK = [{
@@ -1094,6 +1094,24 @@ const SESSION_TYPES = {
   }
 };
 const SHAPE = [["Warm-up game", false], ["Handling drill", false], ["Game using that skill", false], ["Water", true], ["Tackling drill", false], ["Water", true], ["Contact game", false], ["Huddle", true]];
+
+// The next few Sundays / Wednesdays, so nobody has to go and check a calendar
+function upcoming(weekday, count) {
+  const out = [];
+  const d = new Date();
+  d.setHours(12, 0, 0, 0);
+  while (out.length < count) {
+    if (d.getDay() === weekday) out.push(new Date(d));
+    d.setDate(d.getDate() + 1);
+  }
+  return out;
+}
+const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const shortLabel = (d, i) => (i === 0 ? "This " : "") + d.toLocaleDateString("en-GB", {
+  weekday: "short",
+  day: "numeric",
+  month: "short"
+});
 const blankPlan = () => ({
   id: Date.now(),
   date: "",
@@ -1420,7 +1438,33 @@ function PlannerTab(props) {
     }
   }, v.label))), /*#__PURE__*/React.createElement("div", {
     style: S.label
-  }, "Date"), /*#__PURE__*/React.createElement("input", {
+  }, "Date"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      flexWrap: "wrap",
+      marginBottom: 7
+    }
+  }, upcoming(plan.type === "wednesday" ? 3 : 0, 4).map((d, i) => {
+    const v = iso(d);
+    const on = plan.date === v;
+    return /*#__PURE__*/React.createElement("button", {
+      key: v,
+      onClick: () => setPlan(p => ({
+        ...p,
+        date: v
+      })),
+      style: {
+        ...S.catBtn,
+        padding: "7px 11px",
+        fontSize: 11.5,
+        background: on ? C.gold : C.panel2,
+        color: on ? "#000" : C.text,
+        border: `1px solid ${on ? C.gold : C.line}`,
+        fontWeight: on ? 800 : 600
+      }
+    }, shortLabel(d, i));
+  })), /*#__PURE__*/React.createElement("input", {
     type: "date",
     value: plan.date,
     onChange: e => setPlan(p => ({
@@ -1429,6 +1473,12 @@ function PlannerTab(props) {
     })),
     style: S.input
   }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10.5,
+      color: C.muted,
+      marginTop: 4
+    }
+  }, "Or pick any other date above."), /*#__PURE__*/React.createElement("div", {
     style: S.label
   }, "Theme"), /*#__PURE__*/React.createElement("input", {
     placeholder: "e.g. First there is 9",
