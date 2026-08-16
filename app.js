@@ -31,7 +31,7 @@ const ECOLOR = {
   medium: C.gold,
   low: C.green
 };
-const CATS = ["All", "Warm-Up", "Handling", "Tackle", "Game"];
+const CATS = ["All", "Warm-Up", "Handling", "Tackle", "Core Game", "Game"];
 
 // ── PANTHERS ARCS (brand signature) ───────────────────────────
 function Brush({
@@ -1049,15 +1049,15 @@ const DRILLS = [{
 }, {
   id: 8,
   name: "Hawick Ball",
-  cat: "Handling",
+  cat: "Core Game",
   ages: ["u10", "u12"],
   dur: 12,
   energy: "high",
   players: "10+",
   equip: "Cones, bibs, 1 ball",
-  desc: "Multi-directional game with a scoring zone at each end. Score in either.",
-  points: ["Which end is easier right now?", "Support on both shoulders"],
-  tip: "Skip SRU's Level 2 — it needs a kick in each phase, which isn't in our game. Level 3 (turn and burn) is the one worth reaching."
+  desc: "Multi-directional. Run, pass or kick, score in a zone or box at either end.",
+  points: ["Which end is easier right now?", "Scan — where's the space and who's free?", "Defence: look for the interception"],
+  tip: "SRU Core Game. At U10 skip the kicking version — it isn't in our game. Turn and burn (keep the ball after scoring, attack the other way) is the one worth reaching."
 }, {
   id: 9,
   name: "Disco Touch",
@@ -1143,6 +1143,78 @@ const DRILLS = [{
   points: ["Foot close, squeeze and hold", "First there is 9", "Get up and get back 1m"],
   tip: "Name the low wrap loudly when you see it. Say nothing when a tackle comes off a shirt grab — what you praise is what you get."
 }, {
+  id: 20,
+  name: "Barbarians",
+  cat: "Core Game",
+  ages: ["u10", "u12"],
+  dur: 12,
+  energy: "high",
+  players: "8+",
+  equip: "Cones, bibs, 1 ball",
+  desc: "First touch on the ball must be a pass or offload. Second touch triggers a condition — a turnover, or the carrier goes to floor.",
+  points: ["Get close enough to offload", "Stay connected — nobody isolated", "Defence: don't drift apart"],
+  tip: "SRU Core Game. Mild: first touch must pass. Hot: second touch is a turnover. Spicy: second touch and the carrier goes to ground."
+}, {
+  id: 21,
+  name: "Bannockburn",
+  cat: "Core Game",
+  ages: ["u10", "u12"],
+  dur: 12,
+  energy: "high",
+  players: "10+",
+  equip: "Cones, bibs, 1 ball",
+  desc: "After each phase or touch, one defender drops back to their own try line. The defence gets thinner as the attack keeps going.",
+  points: ["Where's the space now?", "Defence: who do we leave?", "Attack fast before they reorganise"],
+  tip: "SRU Core Game. Brilliant for teaching attackers to look for the overlap, because it appears in front of them within two phases."
+}, {
+  id: 22,
+  name: "Highlanders",
+  cat: "Core Game",
+  ages: ["u10", "u12"],
+  dur: 12,
+  energy: "high",
+  players: "8+",
+  equip: "Cones, bibs, 1 ball",
+  desc: "The carrier must offload within one second of contact. If they can't, they pop it or hold on.",
+  points: ["Two hands into contact", "Support arrives before the tackle, not after", "Defence: time your tackle to slow them"],
+  tip: "SRU Core Game. The one-second rule forces support players to arrive early rather than jogging in afterwards."
+}, {
+  id: 23,
+  name: "Caley Ball",
+  cat: "Core Game",
+  ages: ["u10", "u12"],
+  dur: 12,
+  energy: "high",
+  players: "10+",
+  equip: "Cones, bibs, 1 ball",
+  desc: "The attack gets 3 touches to get out of their own half, then 6 touches to score.",
+  points: ["Go forward first, sideways second", "Which space gets us furthest?", "Defence: stop the go forward"],
+  tip: "SRU Core Game. Rewards straight running — teams that pass sideways run out of touches before they reach halfway."
+}, {
+  id: 24,
+  name: "Wallace Ball",
+  cat: "Core Game",
+  ages: ["u10", "u12"],
+  dur: 12,
+  energy: "high",
+  players: "10+",
+  equip: "Cones, bibs, 1 ball",
+  desc: "On a turnover, the team winning the ball has one phase to score.",
+  points: ["Heads up the moment it turns over", "Attack the space they've left", "Defence: stay connected after you win it"],
+  tip: "SRU Core Game. Teaches both sides that a turnover is the most dangerous moment in the game, in either direction."
+}, {
+  id: 25,
+  name: "Muckabout",
+  cat: "Warm-Up",
+  ages: ["u10", "u12"],
+  dur: 8,
+  energy: "high",
+  players: "6+",
+  equip: "A few balls",
+  desc: "Free play. No coaching, no conditions. Players express themselves while the physical prep happens around it.",
+  points: ["Say nothing", "Let them play", "Watch — you'll learn more than you expect"],
+  tip: "Straight from the Blueprint. The hardest thing here is a coach keeping quiet. Use it while stragglers arrive."
+}, {
   id: 18,
   name: "10v10 Game",
   cat: "Game",
@@ -1172,7 +1244,7 @@ const setAllDrills = list => {
   ALL_DRILLS = list;
 };
 const findDrill = id => ALL_DRILLS.find(d => String(d.id) === String(id));
-const APP_VERSION = "v9";
+const APP_VERSION = "v10";
 
 // ── BLOCK 1 ──────────────────────────────────────────────────
 const BLOCKS = {
@@ -3727,6 +3799,237 @@ function BuilderTab({
   }, "Delete")))))))));
 }
 
+// ── BLUEPRINT (Scottish Rugby coaching framework) ────────────
+function BlueprintTab() {
+  const scots = [["S", "Selfless", "Puts the team first before individual success."], ["C", "Creative", "Positive about mistakes and the part they play in learning."], ["O", "Optimistic", "Looks for a positive outcome and treats setbacks as learning."], ["T", "Tenacious", "High work ethic, pushes themselves to improve."], ["S", "Self-Organised", "Works as a team to solve problems without the coach stepping in."]];
+  const split = [{
+    pct: 70,
+    name: "Games",
+    body: "Wee games, clan battles, big game. High decision-making, looks most like a real match. Let it flow and coach on the go."
+  }, {
+    pct: 20,
+    name: "Skill Zones",
+    body: "Decision-making with the pressure turned down. Attack v defence, repetition without repetition. Lots of questions and feedback."
+  }, {
+    pct: 10,
+    name: "Thistle Time",
+    body: "Isolated technical practice. Short and sweet, clear coaching points. Watch carefully and encourage."
+  }];
+  const blocks = [["Muckabout", "Free play, no coaching. Players express themselves while physical prep happens around it."], ["Wee Games", "Small-sided. Lots of touches. Use STEP to change the challenge."], ["Clan Battle", "Games that force tactical decisions and problem solving."], ["Big Game", "Looks like the full game. Lots of transition. All coaches active."], ["Skills Zone", "Isolated practice on one skill. Short, with clear coaching points."], ["Thistle Time", "Individual or small group work, run by the players and supported by the coach."]];
+  const step = [["S — Space", "Pitch size, starting positions, scoring areas, wide channels."], ["T — Task", "Conditions on certain players, new scoring systems, scenarios, challenges."], ["E — Equipment", "Number or type of balls, distractions, alignment constraints."], ["P — People", "Uneven teams, special roles, 'super powers' like double points."]];
+  const skills = [["Freeze", "Stop the activity to build awareness. Let players call the freeze too."], ["Replay", "Rewind a phase and give them another go at it."], ["Questioning", "Open questions at the right moment, rather than telling them the answer."], ["Peer-to-peer", "Players share what they saw. Buddy up key positions."], ["Scoring system", "Exaggerate the session's point through how you award points. Reward effort as well as outcome."], ["Second ball", "Add a second ball to create more decisions."], ["Delegation", "Players help design and run parts of the session, and coach each other."], ["Challenges", "Set individual or team challenges tied to the session theme."]];
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: 14
+    }
+  }, /*#__PURE__*/React.createElement(Card, {
+    title: "The Blueprint",
+    style: {
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: C.muted,
+      fontSize: 13,
+      lineHeight: 1.7,
+      marginBottom: 4
+    }
+  }, "Scottish Rugby's coaching philosophy, the same at every age group. Worth all of us pulling in the same direction, whichever group we coach."), /*#__PURE__*/React.createElement("div", {
+    style: S.tipPill
+  }, "⚡ APES underpins every session: ", /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: C.goldL
+    }
+  }, "Active · Purposeful · Enjoyment · Safety"))), /*#__PURE__*/React.createElement(Card, {
+    title: "SCOTS — what we're trying to grow",
+    style: {
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))",
+      gap: 12
+    }
+  }, scots.map(([l, name, body], i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: S.libCard
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 9,
+      marginBottom: 6
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      background: C.maroon,
+      color: C.white,
+      width: 26,
+      height: 26,
+      borderRadius: 2,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontWeight: 800
+    }
+  }, l), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontWeight: 700,
+      color: C.gold,
+      fontSize: 14
+    }
+  }, name)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12.5,
+      color: C.tan,
+      lineHeight: 1.6
+    }
+  }, body))))), /*#__PURE__*/React.createElement(Card, {
+    title: "How a session should split",
+    style: {
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: C.muted,
+      fontSize: 13,
+      marginBottom: 12,
+      lineHeight: 1.6
+    }
+  }, "The challenge SRU set coaches: spend up to 80% of the session inside game-related activity."), split.map(x => /*#__PURE__*/React.createElement("div", {
+    key: x.name,
+    style: {
+      marginBottom: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 10,
+      marginBottom: 5
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontFamily: '"Haettenschweiler", "Arial Narrow", Impact, sans-serif',
+      fontSize: 26,
+      color: C.gold,
+      minWidth: 52
+    }
+  }, x.pct, "%"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontWeight: 700,
+      color: C.white,
+      fontSize: 14
+    }
+  }, x.name)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "#1a1713",
+      borderRadius: 2,
+      height: 7,
+      overflow: "hidden",
+      marginBottom: 6
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: x.pct + "%",
+      height: "100%",
+      background: C.gold
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12.5,
+      color: C.tan,
+      lineHeight: 1.6
+    }
+  }, x.body)))), /*#__PURE__*/React.createElement(Card, {
+    title: "Session blocks",
+    style: {
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))",
+      gap: 12
+    }
+  }, blocks.map(([n, b]) => /*#__PURE__*/React.createElement("div", {
+    key: n,
+    style: S.libCard
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 700,
+      color: C.gold,
+      fontSize: 13.5,
+      marginBottom: 5
+    }
+  }, n), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12.5,
+      color: C.tan,
+      lineHeight: 1.6
+    }
+  }, b))))), /*#__PURE__*/React.createElement(Card, {
+    title: "STEP — making it harder or easier",
+    style: {
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: C.muted,
+      fontSize: 13,
+      marginBottom: 12,
+      lineHeight: 1.6
+    }
+  }, "When a game isn't working, change one of these rather than explaining it again."), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))",
+      gap: 12
+    }
+  }, step.map(([n, b]) => /*#__PURE__*/React.createElement("div", {
+    key: n,
+    style: S.libCard
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 700,
+      color: C.gold,
+      fontSize: 13.5,
+      marginBottom: 5
+    }
+  }, n), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12.5,
+      color: C.tan,
+      lineHeight: 1.6
+    }
+  }, b))))), /*#__PURE__*/React.createElement(Card, {
+    title: "Coaching skills"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))",
+      gap: 12
+    }
+  }, skills.map(([n, b]) => /*#__PURE__*/React.createElement("div", {
+    key: n,
+    style: S.libCard
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 700,
+      color: C.gold,
+      fontSize: 13.5,
+      marginBottom: 5
+    }
+  }, n), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12.5,
+      color: C.tan,
+      lineHeight: 1.6
+    }
+  }, b))))));
+}
+
 // ── APP ──────────────────────────────────────────────────────
 
 var LOGO_FILES = ["panthers-logo.png","panthers-logo.jpg","panthers-logo.jpeg","Panthers-Logo.png","logo.png","logo.jpg","panthers.png","panthers.jpg","Panmure_Panthers.jpg","Panmure_Panthers.png"];
@@ -3972,7 +4275,7 @@ function App() {
       flexWrap: "wrap",
       justifyContent: "flex-end"
     }
-  }, [["block", "Sessions"], ["planner", "Planner"], ["visuals", "Visuals"], ["players", "Players"], ["builder", "Draw"], ["library", "Drills"], ["saved", "Saved"], ["laws", "Laws"]].map(([k, l]) => /*#__PURE__*/React.createElement("button", {
+  }, [["block", "Sessions"], ["planner", "Planner"], ["visuals", "Visuals"], ["players", "Players"], ["builder", "Draw"], ["library", "Drills"], ["saved", "Saved"], ["laws", "Laws"], ["blueprint", "Blueprint"]].map(([k, l]) => /*#__PURE__*/React.createElement("button", {
     key: k,
     onClick: () => setTab(k),
     style: {
@@ -4063,7 +4366,7 @@ function App() {
     dn: dn
   }), tab === "laws" && /*#__PURE__*/React.createElement(LawsTab, {
     age: age
-  }), shareText && /*#__PURE__*/React.createElement(ShareSheet, {
+  }), tab === "blueprint" && /*#__PURE__*/React.createElement(BlueprintTab, null), shareText && /*#__PURE__*/React.createElement(ShareSheet, {
     text: shareText,
     onClose: () => setShareText(null),
     onCopy: doCopy,
