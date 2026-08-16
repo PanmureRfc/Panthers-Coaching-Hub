@@ -16,6 +16,9 @@ self.addEventListener("activate", (e) => {
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
   if (e.request.url.includes("/rest/v1/")) return;   // never cache Supabase
+
+  // Always try the network first, so an update is picked up straight away.
+  // Fall back to the cache only when there's no signal.
   e.respondWith(
     fetch(e.request).then((r) => {
       const copy = r.clone();

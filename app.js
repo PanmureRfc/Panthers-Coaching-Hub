@@ -1037,6 +1037,7 @@ const DRILLS = [{
   tip: "Condition it to the session: only the first arriving player may touch the ball on the ground, or the carrier must have someone within 3m."
 }];
 const findDrill = id => DRILLS.find(d => d.id === id);
+const APP_VERSION = "v4";
 
 // ── BLOCK 1 ──────────────────────────────────────────────────
 const BLOCK = [{
@@ -3493,7 +3494,13 @@ function App() {
       color: C.gold,
       fontWeight: 800
     }
-  }, "#PLAYUPPANMURE")), tab === "block" && /*#__PURE__*/React.createElement(BlockTab, {
+  }, "#PLAYUPPANMURE"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      opacity: 0.55,
+      marginLeft: 10,
+      letterSpacing: 1
+    }
+  }, APP_VERSION)), tab === "block" && /*#__PURE__*/React.createElement(BlockTab, {
     loadBlock: loadBlock,
     dn: dn
   }), tab === "planner" && /*#__PURE__*/React.createElement(PlannerTab, {
