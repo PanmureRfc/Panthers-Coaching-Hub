@@ -1172,7 +1172,7 @@ const setAllDrills = list => {
   ALL_DRILLS = list;
 };
 const findDrill = id => ALL_DRILLS.find(d => String(d.id) === String(id));
-const APP_VERSION = "v8";
+const APP_VERSION = "v9";
 
 // ── BLOCK 1 ──────────────────────────────────────────────────
 const BLOCKS = {
@@ -1337,7 +1337,8 @@ function DrillBody({
       display: "block"
     }
   }, /*#__PURE__*/React.createElement(Markers, null), /*#__PURE__*/React.createElement(PitchBg, {
-    bg: c.bg
+    bg: c.bg,
+    age: c.age
   }), c.items.map(drawItem)), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
@@ -1965,18 +1966,19 @@ function VisualsTab({
   hide,
   unhide,
   drawOwn,
-  deleteDiagram
+  deleteDiagram,
+  age
 }) {
   const mine = (custom || []).filter(c => c.kind !== "setup" && !c.drillId);
-  const visible = DIAGRAMS.filter(x => !(hidden || []).includes(x.id));
-  const hiddenOnes = DIAGRAMS.filter(x => (hidden || []).includes(x.id));
+  const visible = (age === "u10" ? DIAGRAMS : []).filter(x => !(hidden || []).includes(x.id));
+  const hiddenOnes = (age === "u10" ? DIAGRAMS : []).filter(x => (hidden || []).includes(x.id));
   const cd = mine.find(c => "c" + c.id === sel);
   const d = cd ? {
     id: "c" + cd.id,
     label: cd.name,
     icon: "✏️",
     desc: "Drawn by a coach"
-  } : DIAGRAMS.find(x => x.id === sel) || DIAGRAMS[0];
+  } : visible.find(x => x.id === sel) || visible[0] || null;
   return /*#__PURE__*/React.createElement("div", {
     style: {
       padding: 14
@@ -2013,7 +2015,21 @@ function VisualsTab({
       ...S.diagBtn,
       ...(sel === "c" + x.id ? S.diagBtnOn : {})
     }
-  }, "★ ", x.name))), /*#__PURE__*/React.createElement("div", {
+  }, "★ ", x.name))), !d ? /*#__PURE__*/React.createElement("div", {
+    style: S.empty
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 30,
+      marginBottom: 10
+    }
+  }, "✏️"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: C.muted,
+      lineHeight: 1.6,
+      maxWidth: 400,
+      margin: "0 auto"
+    }
+  }, "Nothing here for ", findAge(age).full, " yet. Draw one in the Draw tab — the pitch there is already the right size for this age group — and it'll appear here for every coach.")) : /*#__PURE__*/React.createElement("div", {
     style: S.diagCard
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -2054,7 +2070,7 @@ function VisualsTab({
   }, "Edit"), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       deleteDiagram(cd.id);
-      setSel(DIAGRAMS[0].id);
+      setSel(visible[0] ? visible[0].id : "");
     },
     style: {
       ...S.btnGhost,
@@ -2078,7 +2094,8 @@ function VisualsTab({
   }, "Draw my own"), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       hide(d.id);
-      setSel(DIAGRAMS.find(x => x.id !== d.id).id);
+      const nxt = visible.find(x => x.id !== d.id);
+      setSel(nxt ? nxt.id : "");
     },
     style: {
       ...S.btnGhost,
@@ -2099,7 +2116,8 @@ function VisualsTab({
       display: "block"
     }
   }, /*#__PURE__*/React.createElement(Markers, null), /*#__PURE__*/React.createElement(PitchBg, {
-    bg: cd.bg
+    bg: cd.bg,
+    age: age
   }), cd.items.map(drawItem)) : /*#__PURE__*/React.createElement(PitchDiagram, {
     type: d.id
   })), /*#__PURE__*/React.createElement("div", {
@@ -2690,14 +2708,42 @@ function drawItem(it) {
       return null;
   }
 }
+
+// Pitch drawn to the right shape for the age group.
+const PITCHES = {
+  u10: {
+    long: 40,
+    wide: 30,
+    ingoal: 5,
+    label: "40m x 30m"
+  },
+  u12: {
+    long: 60,
+    wide: 40,
+    ingoal: 5,
+    label: "60m x 40m · 5m in-goals"
+  }
+};
+function pitchBox(age) {
+  const p = PITCHES[age] || PITCHES.u10;
+  const maxW = 280,
+    maxH = 210;
+  const scale = Math.min(maxW / p.long, maxH / p.wide);
+  const w = p.long * scale,
+    h = p.wide * scale;
+  return {
+    ...p,
+    scale,
+    w,
+    h,
+    x: (340 - w) / 2,
+    y: 12 + (maxH - h) / 2
+  };
+}
 function PitchBg({
-  bg
+  bg,
+  age
 }) {
-  const FULL = 7,
-    PX = 30,
-    PY = 12,
-    PW = 280,
-    PH = 210;
   if (bg !== "pitch") return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
     x: 22,
     y: 12,
@@ -2722,60 +2768,62 @@ function PitchBg({
     y2: y,
     stroke: "rgba(252,252,252,0.09)"
   })));
+  const P = pitchBox(age);
+  const ig = P.ingoal * P.scale;
   return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
-    x: PX,
-    y: PY,
-    width: PW,
-    height: PH,
+    x: P.x,
+    y: P.y,
+    width: P.w,
+    height: P.h,
     fill: "#123d1a",
     rx: 3
   }), /*#__PURE__*/React.createElement("rect", {
-    x: PX,
-    y: PY,
-    width: 5 * FULL,
-    height: PH,
+    x: P.x,
+    y: P.y,
+    width: ig,
+    height: P.h,
     fill: "#0e3315"
   }), /*#__PURE__*/React.createElement("rect", {
-    x: PX + PW - 5 * FULL,
-    y: PY,
-    width: 5 * FULL,
-    height: PH,
+    x: P.x + P.w - ig,
+    y: P.y,
+    width: ig,
+    height: P.h,
     fill: "#0e3315"
   }), /*#__PURE__*/React.createElement("rect", {
-    x: PX,
-    y: PY,
-    width: PW,
-    height: PH,
+    x: P.x,
+    y: P.y,
+    width: P.w,
+    height: P.h,
     fill: "none",
     stroke: "rgba(252,252,252,0.8)",
     strokeWidth: 1.4,
     rx: 3
   }), /*#__PURE__*/React.createElement("line", {
-    x1: PX + 5 * FULL,
-    y1: PY,
-    x2: PX + 5 * FULL,
-    y2: PY + PH,
+    x1: P.x + ig,
+    y1: P.y,
+    x2: P.x + ig,
+    y2: P.y + P.h,
     stroke: "rgba(252,252,252,0.5)"
   }), /*#__PURE__*/React.createElement("line", {
-    x1: PX + PW - 5 * FULL,
-    y1: PY,
-    x2: PX + PW - 5 * FULL,
-    y2: PY + PH,
+    x1: P.x + P.w - ig,
+    y1: P.y,
+    x2: P.x + P.w - ig,
+    y2: P.y + P.h,
     stroke: "rgba(252,252,252,0.5)"
   }), /*#__PURE__*/React.createElement("line", {
-    x1: PX + PW / 2,
-    y1: PY,
-    x2: PX + PW / 2,
-    y2: PY + PH,
+    x1: P.x + P.w / 2,
+    y1: P.y,
+    x2: P.x + P.w / 2,
+    y2: P.y + P.h,
     stroke: "rgba(252,252,252,0.22)",
     strokeDasharray: "4,4"
   }), /*#__PURE__*/React.createElement("text", {
-    x: PX + PW / 2,
-    y: PY - 3,
+    x: 340 / 2,
+    y: P.y - 4,
     textAnchor: "middle",
     fill: C.tan,
     fontSize: 8
-  }, "40m x 30m · we attack right"));
+  }, P.label, " · we attack right"));
 }
 function Markers() {
   return /*#__PURE__*/React.createElement("defs", null, /*#__PURE__*/React.createElement("marker", {
@@ -2839,9 +2887,10 @@ function PlayersTab({
   setups,
   editSetup,
   newSetup,
-  deleteDiagram
+  deleteDiagram,
+  age
 }) {
-  const all = [...STANDS.map(x => ({
+  const all = [...(age === "u10" ? STANDS : []).map(x => ({
     key: x.id,
     label: x.label,
     builtin: x,
@@ -2852,7 +2901,7 @@ function PlayersTab({
     builtin: null,
     custom: d
   }))];
-  const cur = all.find(x => x.key === sel) || all[0];
+  const cur = all.find(x => x.key === sel) || all[0] || null;
   const st = cur.builtin;
   const cd = cur.custom;
   const dot = (x, y, l, ours) => /*#__PURE__*/React.createElement("g", {
@@ -2905,7 +2954,21 @@ function PlayersTab({
       ...S.diagBtn,
       borderStyle: "dashed"
     }
-  }, "+ New setup")), /*#__PURE__*/React.createElement("div", {
+  }, "+ New setup")), !cur ? /*#__PURE__*/React.createElement("div", {
+    style: S.empty
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 30,
+      marginBottom: 10
+    }
+  }, "📍"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: C.muted,
+      lineHeight: 1.6,
+      maxWidth: 400,
+      margin: "0 auto"
+    }
+  }, "No setups for ", findAge(age).full, " yet. Tap \"+ New setup\" and place the players — the pitch is drawn to the right size for this age group.")) : /*#__PURE__*/React.createElement("div", {
     style: S.diagCard
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -2959,7 +3022,8 @@ function PlayersTab({
       display: "block"
     }
   }, /*#__PURE__*/React.createElement(Markers, null), /*#__PURE__*/React.createElement(PitchBg, {
-    bg: cd ? cd.bg : "pitch"
+    bg: cd ? cd.bg : "pitch",
+    age: age
   }), cd ? cd.items.map(drawItem) : /*#__PURE__*/React.createElement(React.Fragment, null, (st.lines || []).map(([x1, y1, x2, y2], i) => /*#__PURE__*/React.createElement("line", {
     key: i,
     x1: x1,
@@ -3093,7 +3157,8 @@ function BuilderTab({
   updateDiagram,
   flash,
   seed,
-  clearSeed
+  clearSeed,
+  age
 }) {
   const [tool, setTool] = useState("A");
   const [items, setItems] = useState([]);
@@ -3223,6 +3288,8 @@ function BuilderTab({
         dur: Number(meta.dur) || 12,
         players: "",
         equip: meta.equip.trim() || "Cones",
+        ages: [age],
+        age,
         desc: meta.desc.trim(),
         points: [meta.p1, meta.p2, meta.p3].filter(x => x.trim()),
         tip: meta.tip.trim(),
@@ -3238,6 +3305,7 @@ function BuilderTab({
       bg,
       items,
       kind,
+      age,
       drillId: kind === "drill" ? drillId : ""
     });
     flash(kind === "setup" ? "Saved — it's in the Players tab" : drillId ? "Saved — it's on that drill" : "Saved — it's in the Visuals tab");
@@ -3426,83 +3494,10 @@ function BuilderTab({
   }, /*#__PURE__*/React.createElement("path", {
     d: "M0,0 L0,6 L6,3 z",
     fill: IC.pass
-  }))), bg === "pitch" ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
-    x: PX,
-    y: PY,
-    width: PW,
-    height: PH,
-    fill: "#123d1a",
-    rx: 3
-  }), /*#__PURE__*/React.createElement("rect", {
-    x: PX,
-    y: PY,
-    width: 5 * FULL,
-    height: PH,
-    fill: "#0e3315"
-  }), /*#__PURE__*/React.createElement("rect", {
-    x: PX + PW - 5 * FULL,
-    y: PY,
-    width: 5 * FULL,
-    height: PH,
-    fill: "#0e3315"
-  }), /*#__PURE__*/React.createElement("rect", {
-    x: PX,
-    y: PY,
-    width: PW,
-    height: PH,
-    fill: "none",
-    stroke: "rgba(252,252,252,0.8)",
-    strokeWidth: 1.4,
-    rx: 3
-  }), /*#__PURE__*/React.createElement("line", {
-    x1: PX + 5 * FULL,
-    y1: PY,
-    x2: PX + 5 * FULL,
-    y2: PY + PH,
-    stroke: "rgba(252,252,252,0.5)"
-  }), /*#__PURE__*/React.createElement("line", {
-    x1: PX + PW - 5 * FULL,
-    y1: PY,
-    x2: PX + PW - 5 * FULL,
-    y2: PY + PH,
-    stroke: "rgba(252,252,252,0.5)"
-  }), /*#__PURE__*/React.createElement("line", {
-    x1: PX + PW / 2,
-    y1: PY,
-    x2: PX + PW / 2,
-    y2: PY + PH,
-    stroke: "rgba(252,252,252,0.22)",
-    strokeDasharray: "4,4"
-  }), /*#__PURE__*/React.createElement("text", {
-    x: PX + PW / 2,
-    y: PY - 3,
-    textAnchor: "middle",
-    fill: C.tan,
-    fontSize: 8
-  }, "40m x 30m")) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
-    x: 22,
-    y: 12,
-    width: 296,
-    height: 216,
-    fill: "#123d1a",
-    rx: 3,
-    stroke: "rgba(252,252,252,0.7)",
-    strokeWidth: 1.3
-  }), [80, 140, 200, 260].map(x => /*#__PURE__*/React.createElement("line", {
-    key: x,
-    x1: x,
-    y1: 12,
-    x2: x,
-    y2: 228,
-    stroke: "rgba(252,252,252,0.09)"
-  })), [66, 120, 174].map(y => /*#__PURE__*/React.createElement("line", {
-    key: y,
-    x1: 22,
-    y1: y,
-    x2: 318,
-    y2: y,
-    stroke: "rgba(252,252,252,0.09)"
-  }))), items.map(draw), pending && /*#__PURE__*/React.createElement("circle", {
+  }))), /*#__PURE__*/React.createElement(PitchBg, {
+    bg: bg,
+    age: age
+  }), items.map(draw), pending && /*#__PURE__*/React.createElement("circle", {
     cx: pending.x,
     cy: pending.y,
     r: 5,
@@ -4022,14 +4017,16 @@ function App() {
     hide: hide,
     unhide: unhide,
     drawOwn: drawOwn,
-    deleteDiagram: deleteDiagram
+    deleteDiagram: deleteDiagram,
+    age: age
   }), tab === "players" && /*#__PURE__*/React.createElement(PlayersTab, {
     sel: stand,
     setSel: setStand,
     setups: diagrams.filter(d => d.kind === "setup"),
     editSetup: editSetup,
     newSetup: newSetup,
-    deleteDiagram: deleteDiagram
+    deleteDiagram: deleteDiagram,
+    age: age
   }), tab === "builder" && /*#__PURE__*/React.createElement(BuilderTab, {
     diagrams: diagrams,
     saveDiagram: saveDiagram,
@@ -4038,7 +4035,8 @@ function App() {
     updateDiagram: updateDiagram,
     flash: flash,
     seed: seed,
-    clearSeed: () => setSeed(null)
+    clearSeed: () => setSeed(null),
+    age: age
   }), tab === "library" && /*#__PURE__*/React.createElement(LibraryTab, {
     cat: cat,
     setCat: setCat,
