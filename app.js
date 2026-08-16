@@ -1,0 +1,3883 @@
+const {
+  useState,
+  useEffect
+} = React;
+
+// ── PANTHERS PALETTE ──────────────────────────────────────────
+const C = {
+  black: "#000000",
+  panel: "#0B0B0B",
+  panel2: "#060606",
+  line: "#241f1c",
+  gold: "#C67E12",
+  // burnt gold — rings, script, secondary headings
+  goldL: "#E09A22",
+  goldDim: "#6b450a",
+  maroon: "#54000C",
+  // brush stroke
+  maroonL: "#7A0A18",
+  white: "#FCFCFC",
+  // display type
+  text: "#EDE8E0",
+  muted: "#7d7268",
+  green: "#57B85F",
+  red: "#7A0A18",
+  redL: "#A8121F",
+  tan: "#BFB29C",
+  grey: "#4a4a4a"
+};
+const ECOLOR = {
+  high: C.red,
+  medium: C.gold,
+  low: C.green
+};
+const CATS = ["All", "Warm-Up", "Handling", "Tackle", "Game"];
+
+// ── PANTHERS ARCS (brand signature) ───────────────────────────
+function Brush({
+  w = 260,
+  h = 26,
+  color = C.maroon,
+  style
+}) {
+  return /*#__PURE__*/React.createElement("svg", {
+    width: w,
+    height: h,
+    viewBox: "0 0 260 26",
+    preserveAspectRatio: "none",
+    "aria-hidden": "true",
+    style: {
+      display: "block",
+      ...style
+    }
+  }, /*#__PURE__*/React.createElement("path", {
+    fill: color,
+    d: "M3 14 C22 7 41 12 62 9 C84 6 100 13 124 10 C150 7 168 14 192 11 C214 8 232 13 257 8 L256 18 C232 23 213 17 191 20 C167 23 149 17 123 20 C99 23 83 16 61 19 C40 22 21 18 4 21 Z"
+  }), /*#__PURE__*/React.createElement("path", {
+    fill: color,
+    opacity: 0.75,
+    d: "M14 22 C46 25 78 21 112 23 L110 25 C76 24 46 26 15 24 Z"
+  }), /*#__PURE__*/React.createElement("circle", {
+    fill: color,
+    cx: 244,
+    cy: 22,
+    r: 1.6
+  }), /*#__PURE__*/React.createElement("circle", {
+    fill: color,
+    cx: 251,
+    cy: 17,
+    r: 1.1
+  }), /*#__PURE__*/React.createElement("circle", {
+    fill: color,
+    cx: 9,
+    cy: 7,
+    r: 1.3
+  }));
+}
+function Wordmark() {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "relative",
+      display: "inline-block"
+    }
+  }, /*#__PURE__*/React.createElement(Brush, {
+    w: 200,
+    h: 20,
+    color: C.maroon,
+    style: {
+      position: "absolute",
+      left: -6,
+      top: 14,
+      opacity: 0.9
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "relative"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: S.eyebrow
+  }, "Panmure"), /*#__PURE__*/React.createElement("div", {
+    style: S.wordmark
+  }, "PANTHERS")));
+}
+
+// ── SVG DIAGRAMS ──────────────────────────────────────────────
+function PitchDiagram({
+  type
+}) {
+  // Two scales, both stated on the diagram so distances mean something.
+  const FULL = 7; // px per metre — whole 40x30 pitch
+  const ZOOM = 15; // px per metre — close-ups
+
+  const P = (x, y, label, fill, stroke, txt, r = 9) => /*#__PURE__*/React.createElement("g", {
+    key: `${x}-${y}-${label}`
+  }, /*#__PURE__*/React.createElement("circle", {
+    cx: x,
+    cy: y,
+    r: r,
+    fill: fill,
+    stroke: stroke,
+    strokeWidth: 2
+  }), /*#__PURE__*/React.createElement("text", {
+    x: x,
+    y: y + 3.5,
+    textAnchor: "middle",
+    fill: txt,
+    fontSize: 9.5,
+    fontWeight: "bold"
+  }, label));
+  const A = (x, y, l = "A", r) => P(x, y, l, C.black, C.gold, C.gold, r);
+  const D = (x, y, l = "D", r) => P(x, y, l, "#180b0b", C.red, C.redL, r);
+  const Cone = (x, y, col = C.gold) => /*#__PURE__*/React.createElement("polygon", {
+    key: `c${x}${y}`,
+    points: `${x},${y - 6} ${x - 4},${y + 3} ${x + 4},${y + 3}`,
+    fill: col
+  });
+  const Ball = (x, y) => /*#__PURE__*/React.createElement("ellipse", {
+    key: `b${x}${y}`,
+    cx: x,
+    cy: y,
+    rx: 6,
+    ry: 4,
+    fill: C.tan,
+    stroke: "#000"
+  });
+  const Scale = (x, y, m, px, label) => /*#__PURE__*/React.createElement("g", null, /*#__PURE__*/React.createElement("line", {
+    x1: x,
+    y1: y,
+    x2: x + m * px,
+    y2: y,
+    stroke: C.tan,
+    strokeWidth: 1.5
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: x,
+    y1: y - 3,
+    x2: x,
+    y2: y + 3,
+    stroke: C.tan,
+    strokeWidth: 1.5
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: x + m * px,
+    y1: y - 3,
+    x2: x + m * px,
+    y2: y + 3,
+    stroke: C.tan,
+    strokeWidth: 1.5
+  }), /*#__PURE__*/React.createElement("text", {
+    x: x + m * px / 2,
+    y: y - 6,
+    textAnchor: "middle",
+    fill: C.tan,
+    fontSize: 8
+  }, label));
+  const Cap = (t1, t2, y = 246) => /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("text", {
+    x: 170,
+    y: y,
+    textAnchor: "middle",
+    fill: "rgba(237,232,224,0.65)",
+    fontSize: 9.5
+  }, t1), /*#__PURE__*/React.createElement("text", {
+    x: 170,
+    y: y + 12,
+    textAnchor: "middle",
+    fill: C.gold,
+    fontSize: 9.5
+  }, t2));
+  const arrow = (id, col) => /*#__PURE__*/React.createElement("marker", {
+    id: id,
+    key: id,
+    markerWidth: "6",
+    markerHeight: "6",
+    refX: "3",
+    refY: "3",
+    orient: "auto"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M0,0 L0,6 L6,3 z",
+    fill: col
+  }));
+  const svg = children => /*#__PURE__*/React.createElement("svg", {
+    viewBox: "0 0 340 262",
+    style: {
+      width: "100%",
+      borderRadius: 4,
+      display: "block"
+    }
+  }, /*#__PURE__*/React.createElement("defs", null, [arrow("ag", C.gold), arrow("ar", C.red), arrow("at", C.tan)]), children);
+
+  // Full pitch: 40m x 30m at 7px/m = 280 x 210
+  const PX = 30,
+    PY = 12,
+    PW = 280,
+    PH = 210;
+  const fullPitch = /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
+    x: PX,
+    y: PY,
+    width: PW,
+    height: PH,
+    fill: "#123d1a",
+    rx: 3
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: PX,
+    y: PY,
+    width: 5 * FULL,
+    height: PH,
+    fill: "#0e3315"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: PX + PW - 5 * FULL,
+    y: PY,
+    width: 5 * FULL,
+    height: PH,
+    fill: "#0e3315"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: PX,
+    y: PY,
+    width: PW,
+    height: PH,
+    fill: "none",
+    stroke: "rgba(252,252,252,0.8)",
+    strokeWidth: 1.4,
+    rx: 3
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: PX + 5 * FULL,
+    y1: PY,
+    x2: PX + 5 * FULL,
+    y2: PY + PH,
+    stroke: "rgba(252,252,252,0.5)"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: PX + PW - 5 * FULL,
+    y1: PY,
+    x2: PX + PW - 5 * FULL,
+    y2: PY + PH,
+    stroke: "rgba(252,252,252,0.5)"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: PX + PW / 2,
+    y1: PY,
+    x2: PX + PW / 2,
+    y2: PY + PH,
+    stroke: "rgba(252,252,252,0.22)",
+    strokeDasharray: "4,4"
+  }), /*#__PURE__*/React.createElement("text", {
+    x: PX + PW / 2,
+    y: PY - 3,
+    textAnchor: "middle",
+    fill: C.tan,
+    fontSize: 8
+  }, "40m long · 30m wide"));
+
+  // ── 6v6 SHAPE (full pitch) ──
+  if (type === "shape") return svg(/*#__PURE__*/React.createElement(React.Fragment, null, fullPitch, [[80, 40], [80, 105], [80, 175], [120, 70], [120, 145], [155, 108]].map(([x, y]) => A(x, y)), [[215, 40], [215, 105], [215, 175], [250, 70], [250, 145], [280, 108]].map(([x, y]) => D(x, y)), Ball(80, 26), Scale(PX, PY + PH + 14, 10, FULL, "10m"), Cap("Six a side across the full 30m width", "Spread out · Don't all chase the ball")));
+
+  // ── DEFENSIVE LINE (full pitch, 6v6) ──
+  if (type === "defence") return svg(/*#__PURE__*/React.createElement(React.Fragment, null, fullPitch, /*#__PURE__*/React.createElement("line", {
+    x1: 190,
+    y1: PY + 8,
+    x2: 190,
+    y2: PY + PH - 8,
+    stroke: "rgba(176,24,24,0.45)",
+    strokeWidth: 1.5,
+    strokeDasharray: "4,3"
+  }), [35, 70, 105, 140, 175, 205].map(y => /*#__PURE__*/React.createElement("g", {
+    key: y
+  }, D(190, y), /*#__PURE__*/React.createElement("line", {
+    x1: 179,
+    y1: y,
+    x2: 158,
+    y2: y,
+    stroke: C.red,
+    strokeWidth: 1.8,
+    markerEnd: "url(#ar)"
+  }))), [35, 70, 105, 140, 175, 205].map(y => A(105, y)), Ball(105, 22), /*#__PURE__*/React.createElement("text", {
+    x: 250,
+    y: PY + PH - 6,
+    textAnchor: "middle",
+    fill: C.tan,
+    fontSize: 8
+  }, "all move up together"), Scale(PX, PY + PH + 14, 10, FULL, "10m"), Cap("Six defenders across 30m — roughly 5m each", "Arm's length plus · Call your player · Move up as one")));
+
+  // ── RESTART / FREE PASS (full pitch) ──
+  if (type === "restart") return svg(/*#__PURE__*/React.createElement(React.Fragment, null, fullPitch, A(170, 108, "FP"), /*#__PURE__*/React.createElement("circle", {
+    cx: 170,
+    cy: 108,
+    r: 14,
+    fill: "none",
+    stroke: C.gold,
+    strokeDasharray: "3,3"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: 170 + 3 * FULL,
+    y1: PY + 8,
+    x2: 170 + 3 * FULL,
+    y2: PY + PH - 8,
+    stroke: "rgba(176,24,24,0.6)",
+    strokeWidth: 1.5,
+    strokeDasharray: "4,3"
+  }), /*#__PURE__*/React.createElement("text", {
+    x: 170 + 3 * FULL + 4,
+    y: PY + 20,
+    fill: C.redL,
+    fontSize: 8
+  }, "3m"), [45, 85, 125, 165, 200].map(y => D(170 + 3 * FULL + 16, y)), /*#__PURE__*/React.createElement("line", {
+    x1: 180,
+    y1: 104,
+    x2: 195,
+    y2: 80,
+    stroke: C.gold,
+    strokeWidth: 1.8,
+    markerEnd: "url(#ag)"
+  }), A(200, 74), [[125, 60], [125, 150], [95, 108]].map(([x, y]) => A(x, y)), Scale(PX, PY + PH + 14, 3, FULL, "3m"), Cap("After a try: free pass at the centre to the team that conceded", "Defence 3m back · Up when the first receiver touches it")));
+
+  // ── BALL OUT OF PLAY (full pitch) ──
+  if (type === "touchline") return svg(/*#__PURE__*/React.createElement(React.Fragment, null, fullPitch, /*#__PURE__*/React.createElement("line", {
+    x1: PX,
+    y1: PY,
+    x2: PX + PW,
+    y2: PY,
+    stroke: C.gold,
+    strokeWidth: 3
+  }), /*#__PURE__*/React.createElement("text", {
+    x: PX + PW / 2,
+    y: PY - 3,
+    textAnchor: "middle",
+    fill: C.gold,
+    fontSize: 8
+  }, "touchline — ball went out here"), A(150, 26, "A"), D(150 + 14, 26, "D"), /*#__PURE__*/React.createElement("text", {
+    x: 188,
+    y: 30,
+    fill: C.redL,
+    fontSize: 8
+  }, "one defender beside the thrower"), /*#__PURE__*/React.createElement("line", {
+    x1: 150,
+    y1: PY + 3 * FULL,
+    x2: PX + PW - 6,
+    y2: PY + 3 * FULL,
+    stroke: "rgba(176,24,24,0.6)",
+    strokeWidth: 1.5,
+    strokeDasharray: "4,3"
+  }), /*#__PURE__*/React.createElement("text", {
+    x: PX + 6,
+    y: PY + 3 * FULL + 10,
+    fill: C.redL,
+    fontSize: 8
+  }, "3m back"), [[195, 60], [235, 60], [275, 60], [235, 100]].map(([x, y]) => D(x, y)), [[110, 70], [90, 120], [130, 155]].map(([x, y]) => A(x, y)), Scale(PX, PY + PH + 14, 3, FULL, "3m"), Cap("Free pass to the team that did NOT touch it last", "One defender beside the thrower · Everyone else 3m back")));
+
+  // ── TACKLE HOLD (close-up, matches SRU layout) ──
+  if (type === "tackle") return svg(/*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
+    x: 20,
+    y: 12,
+    width: 300,
+    height: 200,
+    fill: "#123d1a",
+    rx: 3,
+    stroke: "rgba(252,252,252,0.5)",
+    strokeWidth: 1.2
+  }), /*#__PURE__*/React.createElement("text", {
+    x: 170,
+    y: 9,
+    textAnchor: "middle",
+    fill: C.tan,
+    fontSize: 8
+  }, "close-up · about 20m across"), [60, 115, 225, 280].map(x => D(x, 70)), /*#__PURE__*/React.createElement("line", {
+    x1: 40,
+    y1: 92,
+    x2: 300,
+    y2: 92,
+    stroke: C.gold,
+    strokeWidth: 1.8,
+    strokeDasharray: "7,4"
+  }), /*#__PURE__*/React.createElement("text", {
+    x: 44,
+    y: 88,
+    fill: C.gold,
+    fontSize: 8
+  }, "offside line — 1m back"), /*#__PURE__*/React.createElement("line", {
+    x1: 170,
+    y1: 107,
+    x2: 170,
+    y2: 78,
+    stroke: C.tan,
+    strokeWidth: 1,
+    markerEnd: "url(#at)"
+  }), /*#__PURE__*/React.createElement("text", {
+    x: 176,
+    y: 100,
+    fill: C.tan,
+    fontSize: 7.5
+  }, "1m"), D(170, 107, "T"), A(170, 128, "B", 11), /*#__PURE__*/React.createElement("circle", {
+    cx: 170,
+    cy: 122,
+    r: 22,
+    fill: "none",
+    stroke: C.red,
+    strokeWidth: 1.5,
+    strokeDasharray: "4,3"
+  }), /*#__PURE__*/React.createElement("text", {
+    x: 170,
+    y: 155,
+    textAnchor: "middle",
+    fill: C.redL,
+    fontSize: 8
+  }, "held up — ref calls \"Tackle Complete\""), [[110, 175], [230, 175], [70, 200], [275, 200]].map(([x, y]) => A(x, y)), /*#__PURE__*/React.createElement("line", {
+    x1: 182,
+    y1: 132,
+    x2: 218,
+    y2: 166,
+    stroke: C.gold,
+    strokeWidth: 1.8,
+    markerEnd: "url(#ag)"
+  }), Scale(30, 205, 1, ZOOM * 2, "2m"), Cap("Carrier stops and passes to the nearest player", "Tackler releases · Defenders back 1m · Up on first touch", 232)));
+
+  // ── POST TACKLE, NO BREAKDOWN (close-up, matches SRU layout) ──
+  if (type === "post") return svg(/*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
+    x: 20,
+    y: 12,
+    width: 300,
+    height: 200,
+    fill: "#123d1a",
+    rx: 3,
+    stroke: "rgba(252,252,252,0.5)",
+    strokeWidth: 1.2
+  }), /*#__PURE__*/React.createElement("text", {
+    x: 170,
+    y: 9,
+    textAnchor: "middle",
+    fill: C.tan,
+    fontSize: 8
+  }, "close-up · about 20m across"), [60, 115, 225, 280].map(x => D(x, 70)), P(170, 70, "R", "#0d2a14", C.tan, C.tan), /*#__PURE__*/React.createElement("line", {
+    x1: 40,
+    y1: 92,
+    x2: 300,
+    y2: 92,
+    stroke: C.gold,
+    strokeWidth: 1.8,
+    strokeDasharray: "7,4"
+  }), /*#__PURE__*/React.createElement("text", {
+    x: 44,
+    y: 88,
+    fill: C.gold,
+    fontSize: 8
+  }, "offside line — 1m from hindmost foot"), D(140, 110, "T"), /*#__PURE__*/React.createElement("ellipse", {
+    cx: 172,
+    cy: 125,
+    rx: 18,
+    ry: 11,
+    fill: "#22160f",
+    stroke: C.gold,
+    strokeWidth: 1.5
+  }), /*#__PURE__*/React.createElement("text", {
+    x: 172,
+    y: 128,
+    textAnchor: "middle",
+    fill: C.gold,
+    fontSize: 8
+  }, "B down"), A(210, 132, "9"), /*#__PURE__*/React.createElement("line", {
+    x1: 186,
+    y1: 128,
+    x2: 198,
+    y2: 131,
+    stroke: C.gold,
+    strokeWidth: 1.8,
+    markerEnd: "url(#ag)"
+  }), /*#__PURE__*/React.createElement("text", {
+    x: 210,
+    y: 152,
+    textAnchor: "middle",
+    fill: C.gold,
+    fontSize: 7.5
+  }, "must pass it"), [[95, 180], [160, 195], [250, 178], [295, 198]].map(([x, y]) => A(x, y)), /*#__PURE__*/React.createElement("line", {
+    x1: 222,
+    y1: 137,
+    x2: 244,
+    y2: 166,
+    stroke: C.gold,
+    strokeWidth: 1.8,
+    markerEnd: "url(#ag)"
+  }), Scale(30, 205, 1, ZOOM * 2, "2m"), Cap("Present it (arriving player must pass) or offload from the floor", "Nobody competes for the ball — no rucking at U10", 232)));
+
+  // ── FIRST THERE IS 9 (close-up) ──
+  if (type === "nine") return svg(/*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
+    x: 20,
+    y: 12,
+    width: 300,
+    height: 200,
+    fill: "#123d1a",
+    rx: 3,
+    stroke: "rgba(252,252,252,0.5)",
+    strokeWidth: 1.2
+  }), /*#__PURE__*/React.createElement("text", {
+    x: 170,
+    y: 9,
+    textAnchor: "middle",
+    fill: C.tan,
+    fontSize: 8
+  }, "close-up · about 20m across"), /*#__PURE__*/React.createElement("ellipse", {
+    cx: 80,
+    cy: 95,
+    rx: 19,
+    ry: 12,
+    fill: "#22160f",
+    stroke: C.gold,
+    strokeWidth: 1.5
+  }), /*#__PURE__*/React.createElement("text", {
+    x: 80,
+    y: 98,
+    textAnchor: "middle",
+    fill: C.gold,
+    fontSize: 8
+  }, "tackled"), A(118, 95, "9", 11), /*#__PURE__*/React.createElement("text", {
+    x: 118,
+    y: 118,
+    textAnchor: "middle",
+    fill: C.gold,
+    fontSize: 7.5
+  }, "first player there"), /*#__PURE__*/React.createElement("line", {
+    x1: 130,
+    y1: 92,
+    x2: 158,
+    y2: 82,
+    stroke: C.gold,
+    strokeWidth: 2,
+    markerEnd: "url(#ag)"
+  }), A(172, 76), [[218, 50], [262, 68], [232, 128], [290, 100]].map(([x, y]) => A(x, y)), /*#__PURE__*/React.createElement("line", {
+    x1: 150,
+    y1: 152,
+    x2: 300,
+    y2: 152,
+    stroke: "rgba(198,126,18,0.35)",
+    strokeWidth: 1,
+    strokeDasharray: "4,3"
+  }), /*#__PURE__*/React.createElement("text", {
+    x: 228,
+    y: 168,
+    textAnchor: "middle",
+    fill: C.gold,
+    fontSize: 9
+  }, "everyone else spreads wide"), /*#__PURE__*/React.createElement("text", {
+    x: 228,
+    y: 182,
+    textAnchor: "middle",
+    fill: C.tan,
+    fontSize: 8
+  }, "nobody else goes near the ball"), Scale(30, 205, 1, ZOOM * 2, "2m"), Cap("First player to the tackle is our 9 — they pass it away", "Everyone else gets width · Don't swarm it", 232)));
+
+  // ── 4 CORNERS (drill) ──
+  if (type === "corners") return svg(/*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
+    x: 20,
+    y: 12,
+    width: 300,
+    height: 200,
+    fill: "#123d1a",
+    rx: 3,
+    stroke: "rgba(252,252,252,0.5)",
+    strokeWidth: 1.2
+  }), /*#__PURE__*/React.createElement("text", {
+    x: 170,
+    y: 9,
+    textAnchor: "middle",
+    fill: C.tan,
+    fontSize: 8
+  }, "15–20m square"), [[80, 60], [260, 60], [260, 165], [80, 165]].map(([x, y]) => Cone(x, y)), [[62, 46], [50, 36]].map(([x, y]) => A(x, y, "", 7)), [[278, 46], [290, 36]].map(([x, y]) => A(x, y, "", 7)), [[278, 180], [290, 190]].map(([x, y]) => A(x, y, "", 7)), [[62, 180], [50, 190]].map(([x, y]) => A(x, y, "", 7)), /*#__PURE__*/React.createElement("line", {
+    x1: 95,
+    y1: 58,
+    x2: 240,
+    y2: 58,
+    stroke: C.gold,
+    strokeWidth: 2,
+    markerEnd: "url(#ag)",
+    strokeDasharray: "5,3"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: 262,
+    y1: 76,
+    x2: 262,
+    y2: 148,
+    stroke: C.gold,
+    strokeWidth: 2,
+    markerEnd: "url(#ag)",
+    strokeDasharray: "5,3"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: 245,
+    y1: 167,
+    x2: 100,
+    y2: 167,
+    stroke: C.gold,
+    strokeWidth: 2,
+    markerEnd: "url(#ag)",
+    strokeDasharray: "5,3"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: 78,
+    y1: 148,
+    x2: 78,
+    y2: 78,
+    stroke: C.gold,
+    strokeWidth: 2,
+    markerEnd: "url(#ag)",
+    strokeDasharray: "5,3"
+  }), ["pass", "pass", "pass", "pass"].map((t, i) => {
+    const pos = [[168, 50], [278, 115], [172, 182], [62, 115]][i];
+    return /*#__PURE__*/React.createElement("text", {
+      key: i,
+      x: pos[0],
+      y: pos[1],
+      textAnchor: "middle",
+      fill: C.gold,
+      fontSize: 8
+    }, t);
+  }), Ball(80, 46), /*#__PURE__*/React.createElement("text", {
+    x: 170,
+    y: 120,
+    textAnchor: "middle",
+    fill: C.tan,
+    fontSize: 9
+  }, "run out, pass on, join the next corner"), /*#__PURE__*/React.createElement("text", {
+    x: 170,
+    y: 134,
+    textAnchor: "middle",
+    fill: C.gold,
+    fontSize: 9,
+    fontWeight: "bold"
+  }, "then swap direction"), Cap("Equal players behind each cone — it flows round the square", "Two hands · Hands up early · Pass in front of them", 232)));
+
+  // ── TWO-LINE PASSING (drill) ──
+  if (type === "passing") return svg(/*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
+    x: 20,
+    y: 12,
+    width: 300,
+    height: 200,
+    fill: "#123d1a",
+    rx: 3,
+    stroke: "rgba(252,252,252,0.5)",
+    strokeWidth: 1.2
+  }), /*#__PURE__*/React.createElement("text", {
+    x: 170,
+    y: 9,
+    textAnchor: "middle",
+    fill: C.tan,
+    fontSize: 8
+  }, "about 40m across · 4 cones each side"), /*#__PURE__*/React.createElement("line", {
+    x1: 170,
+    y1: 20,
+    x2: 170,
+    y2: 204,
+    stroke: "rgba(252,252,252,0.3)",
+    strokeDasharray: "4,4"
+  }), /*#__PURE__*/React.createElement("text", {
+    x: 170,
+    y: 200,
+    textAnchor: "middle",
+    fill: C.tan,
+    fontSize: 8
+  }, "halfway"), [45, 80, 115, 150].map(y => Cone(52, y)), [45, 80, 115, 150].map(y => Cone(288, y)), [45, 80, 115, 150].map((y, i) => A(66, y, String(i + 1), 8)), [45, 80, 115, 150].map((y, i) => A(274, y, String(i + 1), 8)), /*#__PURE__*/React.createElement("line", {
+    x1: 78,
+    y1: 45,
+    x2: 160,
+    y2: 45,
+    stroke: C.gold,
+    strokeWidth: 2,
+    markerEnd: "url(#ag)"
+  }), /*#__PURE__*/React.createElement("text", {
+    x: 118,
+    y: 38,
+    textAnchor: "middle",
+    fill: C.gold,
+    fontSize: 8
+  }, "carry to halfway first"), /*#__PURE__*/React.createElement("line", {
+    x1: 166,
+    y1: 50,
+    x2: 150,
+    y2: 74,
+    stroke: C.gold,
+    strokeWidth: 1.8,
+    markerEnd: "url(#ag)",
+    strokeDasharray: "4,3"
+  }), /*#__PURE__*/React.createElement("text", {
+    x: 128,
+    y: 80,
+    fill: C.gold,
+    fontSize: 8
+  }, "then pass"), /*#__PURE__*/React.createElement("line", {
+    x1: 262,
+    y1: 115,
+    x2: 185,
+    y2: 115,
+    stroke: C.tan,
+    strokeWidth: 1.8,
+    markerEnd: "url(#at)",
+    opacity: 0.7
+  }), /*#__PURE__*/React.createElement("text", {
+    x: 225,
+    y: 108,
+    textAnchor: "middle",
+    fill: C.tan,
+    fontSize: 8
+  }, "other side runs too"), /*#__PURE__*/React.createElement("text", {
+    x: 170,
+    y: 176,
+    textAnchor: "middle",
+    fill: C.tan,
+    fontSize: 9
+  }, "one side first — then both at once"), Cap("The halfway carry is what gives everyone behind their depth", "Run onto it, don't wait for it · Two hands · Eyes up", 232)));
+  return null;
+}
+const DIAGRAMS = [{
+  id: "nine",
+  label: "First There Is 9",
+  icon: "9️⃣",
+  desc: "First player to the tackle is our 9 — they pass it away, everyone else spreads"
+}, {
+  id: "tackle",
+  label: "Tackle Hold",
+  icon: "🤝",
+  desc: "Held up, 'Tackle Complete' called — carrier stops and passes, defenders back 1m"
+}, {
+  id: "post",
+  label: "Post Tackle",
+  icon: "⬇️",
+  desc: "On the ground: present it (arriving player must pass) or offload from the floor"
+}, {
+  id: "defence",
+  label: "Defensive Line",
+  icon: "🛡️",
+  desc: "Six defenders across 30m — spread out and move up together"
+}, {
+  id: "shape",
+  label: "6v6 Shape",
+  icon: "📍",
+  desc: "How six a side should look on the full 40x30 pitch"
+}, {
+  id: "corners",
+  label: "4 Corners",
+  icon: "🔄",
+  desc: "Round the square, then swap direction"
+}, {
+  id: "passing",
+  label: "Two-Line Passing",
+  icon: "🏉",
+  desc: "First carrier goes to halfway — that's what builds the depth"
+}, {
+  id: "restart",
+  label: "Restart / Free Pass",
+  icon: "▶️",
+  desc: "After a try or an offence — free pass, defence 3m back"
+}, {
+  id: "touchline",
+  label: "Ball Out of Play",
+  icon: "↩️",
+  desc: "New this season — one defender beside the thrower, rest 3m back"
+}];
+
+// ── LAWS ─────────────────────────────────────────────────────
+const LAW_TILES = [{
+  title: "Players",
+  value: "6 v 6 mixed (max 3 subs)",
+  icon: "👥"
+}, {
+  title: "Pitch",
+  value: "40m × 30m",
+  icon: "📐"
+}, {
+  title: "Ball",
+  value: "Size 3",
+  icon: "🏉"
+}, {
+  title: "Game length",
+  value: "Max 10 min per game",
+  icon: "⏱️"
+}, {
+  title: "Festival",
+  value: "Max 60 min playing time",
+  icon: "🏆"
+}, {
+  title: "Scoring",
+  value: "3-2-1 (per player)",
+  icon: "🔢"
+}, {
+  title: "Tackle",
+  value: "Waist & below + Tackle Hold",
+  icon: "🤝"
+}, {
+  title: "Breakdown",
+  value: "None — offload or pass",
+  icon: "❌"
+}, {
+  title: "Knock on",
+  value: "Play on if two hands",
+  icon: "✅"
+}, {
+  title: "Hand off",
+  value: "Not allowed",
+  icon: "🚫"
+}, {
+  title: "Kicking",
+  value: "None in open play",
+  icon: "🚫"
+}, {
+  title: "Scrum & lineout",
+  value: "Free pass instead",
+  icon: "📋"
+}];
+const LAW_CARDS = [{
+  title: "3-2-1 Scoring",
+  icon: "🔢",
+  body: "Per player, not per team. Each player's 1st try is 3 points, 2nd is 2, every one after is 1. Three tries by three different players beats three by one player, 9–6. Coach it live: get it to someone who hasn't scored."
+}, {
+  title: "Knock On, Play On",
+  icon: "✅",
+  body: "Two-handed attempt at the catch and it goes down — play continues. One-handed attempt — free pass to the other team. SRU want us sympathetic while they learn to handle under pressure. Praise the attempt."
+}, {
+  title: "Tackle Hold",
+  icon: "🤝",
+  body: "Rewards a tackler who stops or significantly slows the carrier but can't get them down. Referee waits about 2 seconds for an offload then calls 'Tackle Complete'. Carrier stops and passes to the nearest player. Defenders retire 1m."
+}, {
+  title: "Post Tackle — No Breakdown",
+  icon: "❌",
+  body: "On the ground the carrier presents (arriving player must pass) or offloads from the floor (receiver can run or pass). Tackler releases and retires 1m from the hindmost point. Nobody competes for the ball."
+}, {
+  title: "Tackle Height",
+  icon: "🎯",
+  body: "On or below the waist. Above that is a free pass. No swing tackles — the tackler is responsible for bringing the carrier down safely. Referees may play advantage if height creeps up but the carrier can still pass."
+}, {
+  title: "Restarts",
+  icon: "🔄",
+  body: "Start: any kick from the centre, must travel 5m, receivers 5m back. After a try: free pass at centre to the team that conceded, defence 3m back. After an offence: free pass where it happened, defence 3m back."
+}, {
+  title: "Ball Out of Play",
+  icon: "↩️",
+  body: "Free pass to the team that did not touch it last. New: one defender stands next to the attacker throwing in, the rest are 3m back from where it went out."
+}, {
+  title: "Half Game Policy",
+  icon: "👥",
+  body: "Every player gets equal game time. Not affected by ability. With 10-minute games and a 60-minute festival cap, work the rotation out before you arrive rather than on the touchline."
+}];
+
+// ── DRILLS ───────────────────────────────────────────────────
+const DRILLS = [{
+  id: 1,
+  name: "Chicken, Hero, Duck",
+  cat: "Warm-Up",
+  dur: 12,
+  energy: "high",
+  players: "8+",
+  equip: "Cones",
+  desc: "Catcher picks a player who chooses: Chicken (everyone goes), Hero (they go alone), Duck (they pick a partner). Caught players join the catching team.",
+  points: ["Head up — where's the space?", "Change of pace, not just direction", "Duck: stay close enough to pass"],
+  tip: "Run the first rounds as touch, then tackle hold, then full tackle once they're warm. Same game, and it doubles as a tackle progression."
+}, {
+  id: 2,
+  name: "Toilet Tig",
+  cat: "Warm-Up",
+  dur: 10,
+  energy: "high",
+  players: "8+",
+  equip: "Cones, 3–4 balls",
+  desc: "Taggers carry a ball and bump it off others to freeze them. Frozen players hold an arm out; a teammate flushes it down to free them.",
+  points: ["Taggers: two hands on the ball", "Head up — who needs a flush?", "Don't all rescue the same person"],
+  tip: "The two-hands rule turns this from a tig game into a ball security game. Same cue we use all season."
+}, {
+  id: 3,
+  name: "Relay Circuit",
+  cat: "Warm-Up",
+  dur: 12,
+  energy: "high",
+  players: "8+",
+  equip: "Hurdles, ladders, cones, tackle bag",
+  desc: "Teams race through hurdles, a cone triangle (sprint out, side shuffle, run backwards), ladders, then hit and lift the tackle bag before tagging the next player.",
+  points: ["Low through the turns", "Quick feet, don't look down", "Bag: waist and below — the race doesn't change the height"],
+  tip: "Run three or four short teams rather than two long ones, or half of them are queuing. If height creeps up at the bag, make that station non-competitive."
+}, {
+  id: 4,
+  name: "Two-Line Passing",
+  cat: "Handling",
+  dur: 15,
+  energy: "medium",
+  players: "8+",
+  equip: "8 cones, 2 balls",
+  desc: "Four cones each side, players spread across them. The first carrier takes it to halfway before the first pass, which gives everyone behind time to get depth.",
+  points: ["Carry it to halfway — don't rush the pass", "Run onto it, don't wait for it", "Two hands"],
+  tip: "Start one side at a time, then both sides at once so they have to keep their eyes up for traffic."
+}, {
+  id: 17,
+  name: "4 Corners",
+  cat: "Handling",
+  dur: 15,
+  energy: "medium",
+  players: "8+",
+  equip: "4 cones, 1–2 balls",
+  desc: "Four cones in a square, players behind each. First player runs out and passes left; the receiver runs out and passes to the next corner, flowing round the square. Then swap direction.",
+  points: ["Two hands", "Hands up early — give them a target", "Pass in front of them, not at them"],
+  tip: "Always swap direction. Most kids this age can only pass one way, and if you never swap, nobody finds out until a festival. Variations on the same square: diagonal running, pass before you get across, gut pass into the belly, high pass they jump for, pop pass, meet in the middle."
+}, {
+  id: 5,
+  name: "5 Pass",
+  cat: "Handling",
+  dur: 12,
+  energy: "medium",
+  players: "8+",
+  equip: "Cones, bibs, 1 ball",
+  desc: "Two teams, multi-directional. Complete five passes for a point. No try line, so they have to look everywhere.",
+  points: ["Hands up before the pass comes", "Don't stand still after you pass", "Who's behind you?"],
+  tip: "Level 1: two-hand drop plays on, one-hand drop is a turnover. Level 2: one touch turnover. Level 3: players set their own rules."
+}, {
+  id: 6,
+  name: "Money Ball",
+  cat: "Handling",
+  dur: 12,
+  energy: "medium",
+  players: "8+",
+  equip: "Cones, bibs, 1 ball",
+  desc: "Every completed pass is a point, but points only count once a player touches the ball on the floor and shouts BANK. Lose it first and the points go too.",
+  points: ["How many are you risking?", "Two hands on the floor when you bank", "Talk — when are we banking?"],
+  tip: "Banking is the same body position as presenting the ball after a tackle. They rehearse it dozens of times without being told they're practising."
+}, {
+  id: 7,
+  name: "5 Pass Breakout",
+  cat: "Handling",
+  dur: 12,
+  energy: "high",
+  players: "8+",
+  equip: "Cones in 4 colours, bibs, 1 ball",
+  desc: "Four coloured sides. Make five passes, then the coach calls a colour and they score over that line.",
+  points: ["Head up while you pass — you don't know which way yet", "Nearest player to that side, call for it"],
+  tip: "Call the colour on the third or fourth pass rather than the fifth. Keeps their heads up and stops them counting instead of playing."
+}, {
+  id: 8,
+  name: "Hawick Ball",
+  cat: "Handling",
+  dur: 12,
+  energy: "high",
+  players: "10+",
+  equip: "Cones, bibs, 1 ball",
+  desc: "Multi-directional game with a scoring zone at each end. Score in either.",
+  points: ["Which end is easier right now?", "Support on both shoulders"],
+  tip: "Skip SRU's Level 2 — it needs a kick in each phase, which isn't in our game. Level 3 (turn and burn) is the one worth reaching."
+}, {
+  id: 9,
+  name: "Disco Touch",
+  cat: "Handling",
+  dur: 15,
+  energy: "high",
+  players: "8+",
+  equip: "Cones, bibs, headbands, 1 ball",
+  desc: "Game of touch. Every player who scores gets a headband. First team with everyone in a headband wins.",
+  points: ["Who hasn't got a headband yet?", "Put them into the space", "You've scored — now set someone else up"],
+  tip: "This is the 3-2-1 scoring system as a game. Say it out loud: three different scorers beats one player scoring three. No headbands? Spare bibs in waistbands."
+}, {
+  id: 10,
+  name: "Tackle 1 — Ground Confidence",
+  cat: "Tackle",
+  dur: 12,
+  energy: "medium",
+  players: "6+",
+  equip: "Mats if available",
+  desc: "No tackling at all. Rolling, falling onto the side not the front, getting back up fast. Races and games on the floor.",
+  points: ["Land on your side", "Get up quick", "The ground isn't scary"],
+  tip: "Kids who pull shirts are usually kids who don't want to end up on the floor. Fix that first and the whole progression gets easier."
+}, {
+  id: 11,
+  name: "Tackle 2 — Kneeling",
+  cat: "Tackle",
+  dur: 15,
+  energy: "medium",
+  players: "6+",
+  equip: "Bibs, mats if available",
+  desc: "Both players kneeling. Carrier shuffles past, tackler wraps low and squeezes. Nobody goes to ground. Repetition on both shoulders.",
+  points: ["Cheek to cheek", "Squeeze and hold", "Eyes open"],
+  tip: "Kneeling removes all the fear. Get the grip right here and the standing versions are the same thing with legs."
+}, {
+  id: 12,
+  name: "Tackle 3 — Walking, From the Side",
+  cat: "Tackle",
+  dur: 15,
+  energy: "medium",
+  players: "6+",
+  equip: "Bibs, cones",
+  desc: "Carrier walks a straight line, tackler comes from the side and takes them down safely. Tackler lands on top, never underneath.",
+  points: ["Foot close", "Eyes open, chin off your chest", "No swing tackles"],
+  tip: "Pair a nervous child with a coach as the carrier. Walking pace means nobody gets hurt and confidence builds fast."
+}, {
+  id: 13,
+  name: "Tackle 4 — Moving, From the Front",
+  cat: "Tackle",
+  dur: 15,
+  energy: "high",
+  players: "6+",
+  equip: "Bibs, cones",
+  desc: "Carrier jogs at the tackler. Foot close, head to the side, wrap and go down together. Build the speed up gradually.",
+  points: ["Foot close", "Head to the side — never the front", "Squeeze and hold"],
+  tip: "Only raise the speed when the technique holds. If height starts creeping up, drop the speed back rather than shouting about it."
+}, {
+  id: 14,
+  name: "Tackle 5 — The Tackle Hold",
+  cat: "Tackle",
+  dur: 15,
+  energy: "high",
+  players: "6+",
+  equip: "Bibs, cones",
+  desc: "Carrier drives forward, tackler wraps low and stops them without going to ground. Coach calls 'Tackle Complete'. Carrier stops and passes to the nearest player, defenders retire 1m.",
+  points: ["Stop them and hold on — you don't have to put them down", "Held up? Stop and pass", "Tacklers: release and get back 1m"],
+  tip: "Referees will call 'Tackle Complete' at festivals. If that's the first time your players hear it, they'll freeze. Rehearse the actual words."
+}, {
+  id: 15,
+  name: "Tackle 6 — Live 1v1 and 2v2",
+  cat: "Tackle",
+  dur: 15,
+  energy: "high",
+  players: "8+",
+  equip: "Bibs, cones",
+  desc: "Small channel, everything from the block at game speed. 1v1 first, then 2v2 with a support player.",
+  points: ["Foot close, squeeze and hold", "First there is 9", "Get up and get back 1m"],
+  tip: "Name the low wrap loudly when you see it. Say nothing when a tackle comes off a shirt grab — what you praise is what you get."
+}, {
+  id: 16,
+  name: "6v6 Game",
+  cat: "Game",
+  dur: 15,
+  energy: "high",
+  players: "12+",
+  equip: "Cones, bibs, 1 ball",
+  desc: "Full game on 40x30 applying whatever the session worked on. Referee it properly — free passes, tackle height, 'Tackle Complete'.",
+  points: ["Apply what we practised", "Everyone touches the ball", "Praise the attempt, name the skill"],
+  tip: "Condition it to the session: only the first arriving player may touch the ball on the ground, or the carrier must have someone within 3m."
+}];
+const findDrill = id => DRILLS.find(d => d.id === id);
+
+// ── BLOCK 1 ──────────────────────────────────────────────────
+const BLOCK = [{
+  n: 1,
+  theme: "Two hands · Getting comfortable on the ground",
+  points: ["Two hands on the ball, every time", "Head up — where's the space?", "The ground isn't scary"],
+  drills: [2, 4, 5, 10, 1],
+  why: "The knock-on law is the change they'll notice first. Embed 'two hands' in week one and it does the work all season. No tackling today — ground confidence comes first."
+}, {
+  n: 2,
+  theme: "Support · Kneeling tackles",
+  points: ["Stay close enough to pass", "Cheek to cheek", "Squeeze and hold"],
+  drills: [1, 17, 5, 11, 16],
+  why: "Duck is the same picture as the post-tackle law — carrier plus one close support player. Say that to them."
+}, {
+  n: 3,
+  theme: "Staying in your space · Walking tackles",
+  points: ["Spread out — arm's length plus", "Foot close", "Eyes open, chin off your chest"],
+  drills: [3, 7, 8, 12, 16],
+  why: "The 40x30 pitch is the biggest practical change this season. Kids who defended fine at P4 get beaten outside until they learn to spread and move up together."
+}, {
+  n: 4,
+  theme: "First there is 9 · Tackling from the front",
+  points: ["First there is 9, second is 10, everyone else spreads", "Foot close, eyes open", "Get up and get back 1m"],
+  drills: [2, 6, 13, 16],
+  why: "Condition the game so only the first arriving player may touch the ball on the ground. They stop swarming because swarming stops working, not because they've been told off."
+}, {
+  n: 5,
+  theme: "The Tackle Hold",
+  points: ["Stop them and hold on", "Held up? Stop and pass to the nearest player", "Tacklers — release and get back 1m"],
+  drills: [1, 4, 9, 14, 16],
+  why: "Referees call 'Tackle Complete' at festivals. Rehearse the phrase so nobody stands still when they hear it for real."
+}, {
+  n: 6,
+  theme: "Putting it together · 3-2-1",
+  points: ["Who hasn't scored yet?", "First there is 9, everyone else spreads", "Foot close, squeeze and hold"],
+  drills: [2, 9, 8, 15, 16],
+  why: "Under 3-2-1, three different scorers beat one player scoring three. Playing it out loud teaches unselfishness without anyone being told off for being greedy."
+}];
+const SESSION_TYPES = {
+  sunday: {
+    label: "Sunday",
+    start: "10:00",
+    duration: 90
+  },
+  wednesday: {
+    label: "Wednesday",
+    start: "18:00",
+    duration: 60
+  }
+};
+const SHAPE = [["Warm-up game", false], ["Handling drill", false], ["Game using that skill", false], ["Water", true], ["Tackling drill", false], ["Water", true], ["Contact game", false], ["Huddle", true]];
+const blankPlan = () => ({
+  id: Date.now(),
+  date: "",
+  type: "sunday",
+  theme: "",
+  points: ["", "", ""],
+  notes: "",
+  drills: []
+});
+
+// ── WHATSAPP TEXT ────────────────────────────────────────────
+function buildMessage(plan, dn = d => d.name) {
+  const t = SESSION_TYPES[plan.type];
+  const [h0, m0] = t.start.split(":").map(Number);
+  let mins = h0 * 60 + m0;
+  const clock = m => `${String(Math.floor(m / 60) % 24).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+  const when = plan.date ? new Date(plan.date + "T12:00").toLocaleDateString("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long"
+  }) : t.label;
+  const lines = [`🐆 *PANTHERS U10* — ${when}`, ""];
+  if (plan.theme) lines.push(`*${plan.theme}*`, "");
+  const pts = plan.points.filter(p => p);
+  if (pts.length) {
+    lines.push("*Coaching points*");
+    pts.forEach((p, i) => lines.push(`${i + 1}. ${p}`));
+    lines.push("");
+  }
+  if (plan.drills.length) {
+    lines.push("*Plan*");
+    plan.drills.forEach(d => {
+      lines.push(`${clock(mins)}  ${dn(d)} (${d.dur}m)`);
+      mins += d.dur;
+    });
+    lines.push(`${clock(mins)}  Huddle`, "");
+    const kit = [...new Set(plan.drills.flatMap(d => d.equip.split(",").map(s => s.trim())))];
+    lines.push(`*Kit:* ${kit.join(", ")}`, "");
+  }
+  if (plan.notes) lines.push(`*Notes:* ${plan.notes}`, "");
+  lines.push("Splitting: same drill in parallel groups if we're short of coaches, or stations rotating every 10-12 min if numbers are big.");
+  return lines.join("\n");
+}
+
+// ── SMALL COMPONENTS ─────────────────────────────────────────
+function Card({
+  title,
+  children,
+  style
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      ...S.card,
+      ...style
+    }
+  }, title && /*#__PURE__*/React.createElement("div", {
+    style: S.cardHd
+  }, title), children);
+}
+function DrillBody({
+  d
+}) {
+  return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: C.muted,
+      margin: "4px 0 8px"
+    }
+  }, d.cat, " · ", d.players, " · ", d.equip), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: C.tan,
+      lineHeight: 1.6,
+      marginBottom: 10
+    }
+  }, d.desc), /*#__PURE__*/React.createElement("div", {
+    style: S.microHd
+  }, "What to say"), d.points.map((p, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      fontSize: 12,
+      color: C.green,
+      marginBottom: 3
+    }
+  }, "✓ ", p)), /*#__PURE__*/React.createElement("div", {
+    style: S.tipPill
+  }, "⚡ ", d.tip));
+}
+function ShareSheet({
+  text,
+  onClose,
+  onCopy,
+  copied
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    style: S.overlay,
+    onClick: onClose
+  }, /*#__PURE__*/React.createElement("div", {
+    style: S.sheet,
+    onClick: e => e.stopPropagation()
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      ...S.cardHd,
+      marginBottom: 0
+    }
+  }, "Send to the coaches"), /*#__PURE__*/React.createElement("button", {
+    onClick: onClose,
+    style: S.xBtn,
+    "aria-label": "Close"
+  }, "✕")), /*#__PURE__*/React.createElement("textarea", {
+    readOnly: true,
+    value: text,
+    style: S.shareBox,
+    onFocus: e => e.target.select()
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      marginTop: 12,
+      flexWrap: "wrap"
+    }
+  }, /*#__PURE__*/React.createElement("a", {
+    href: `https://wa.me/?text=${encodeURIComponent(text)}`,
+    target: "_blank",
+    rel: "noopener noreferrer",
+    style: {
+      ...S.btnPrimary,
+      textDecoration: "none",
+      display: "inline-block"
+    }
+  }, "Open WhatsApp"), /*#__PURE__*/React.createElement("button", {
+    onClick: onCopy,
+    style: S.btnGhost
+  }, copied ? "Copied" : "Copy text")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: C.muted,
+      marginTop: 10,
+      lineHeight: 1.6
+    }
+  }, "If the WhatsApp button doesn't open, copy the text and paste it into the group.")));
+}
+
+// ── TABS ─────────────────────────────────────────────────────
+function BlockTab({
+  loadBlock,
+  dn
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: 14
+    }
+  }, /*#__PURE__*/React.createElement(Card, {
+    title: "Block 1 — six Sundays"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: C.muted,
+      fontSize: 13,
+      marginBottom: 14,
+      lineHeight: 1.6
+    }
+  }, "Run them in order — the tackle work builds week on week. If a session goes badly, repeat it rather than moving on."), /*#__PURE__*/React.createElement("div", {
+    style: S.tipPill
+  }, "⚡ One cue, all season, all coaches: ", /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: C.goldL
+    }
+  }, "Foot close · Eyes open · Cheek to cheek · Squeeze and hold")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fill,minmax(290px,1fr))",
+      gap: 14,
+      marginTop: 16
+    }
+  }, BLOCK.map(b => /*#__PURE__*/React.createElement("div", {
+    key: b.n,
+    style: S.libCard
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "relative",
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement(Brush, {
+    w: 120,
+    h: 22,
+    color: C.maroon,
+    style: {
+      position: "absolute",
+      left: -4,
+      top: 0
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      ...S.badge,
+      position: "relative",
+      background: "transparent",
+      paddingLeft: 8
+    }
+  }, "Session ", b.n)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 700,
+      color: C.gold,
+      fontSize: 14,
+      marginBottom: 10,
+      lineHeight: 1.4
+    }
+  }, b.theme), /*#__PURE__*/React.createElement("div", {
+    style: S.microHd
+  }, "Three coaching points"), b.points.map((p, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      fontSize: 12,
+      color: C.green,
+      marginBottom: 2
+    }
+  }, i + 1, ". ", p)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      ...S.microHd,
+      marginTop: 10
+    }
+  }, "Drills"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexWrap: "wrap",
+      gap: 5
+    }
+  }, b.drills.map(id => /*#__PURE__*/React.createElement("span", {
+    key: id,
+    style: S.ptPill
+  }, dn(findDrill(id))))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      ...S.tipPill,
+      marginTop: 10
+    }
+  }, b.why), /*#__PURE__*/React.createElement("button", {
+    onClick: () => loadBlock(b),
+    style: {
+      ...S.btnPrimary,
+      marginTop: 12,
+      width: "100%"
+    }
+  }, "Use this session"))))));
+}
+function PlannerTab(props) {
+  const {
+    plan,
+    setPlan,
+    savePlan,
+    cat,
+    setCat,
+    addDrill,
+    remDrill,
+    move,
+    loadBlock,
+    openShare,
+    dn
+  } = props;
+  const info = SESSION_TYPES[plan.type];
+  const total = plan.drills.reduce((s, d) => s + d.dur, 0);
+  const left = info.duration - total;
+  const list = cat === "All" ? DRILLS : DRILLS.filter(d => d.cat === cat);
+  return /*#__PURE__*/React.createElement("div", {
+    style: S.cols
+  }, /*#__PURE__*/React.createElement("div", {
+    style: S.colNarrow
+  }, /*#__PURE__*/React.createElement(Card, {
+    title: "Session setup"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: S.label
+  }, "Type"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6
+    }
+  }, Object.entries(SESSION_TYPES).map(([k, v]) => /*#__PURE__*/React.createElement("button", {
+    key: k,
+    onClick: () => setPlan(p => ({
+      ...p,
+      type: k
+    })),
+    style: {
+      ...S.typBtn,
+      background: plan.type === k ? C.gold : "#1c1917",
+      color: plan.type === k ? C.black : C.muted,
+      border: `2px solid ${plan.type === k ? C.gold : C.line}`
+    }
+  }, v.label))), /*#__PURE__*/React.createElement("div", {
+    style: S.label
+  }, "Date"), /*#__PURE__*/React.createElement("input", {
+    type: "date",
+    value: plan.date,
+    onChange: e => setPlan(p => ({
+      ...p,
+      date: e.target.value
+    })),
+    style: S.input
+  }), /*#__PURE__*/React.createElement("div", {
+    style: S.label
+  }, "Theme"), /*#__PURE__*/React.createElement("input", {
+    placeholder: "e.g. First there is 9",
+    value: plan.theme,
+    onChange: e => setPlan(p => ({
+      ...p,
+      theme: e.target.value
+    })),
+    style: S.input
+  }), /*#__PURE__*/React.createElement("div", {
+    style: S.label
+  }, "Three coaching points"), [0, 1, 2].map(i => /*#__PURE__*/React.createElement("input", {
+    key: i,
+    placeholder: `${i + 1}.`,
+    value: plan.points[i] || "",
+    onChange: e => setPlan(p => {
+      const pts = [...p.points];
+      pts[i] = e.target.value;
+      return {
+        ...p,
+        points: pts
+      };
+    }),
+    style: {
+      ...S.input,
+      marginBottom: 5
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: S.label
+  }, "Notes"), /*#__PURE__*/React.createElement("textarea", {
+    placeholder: "Who's bringing the bibs, pitch conditions...",
+    value: plan.notes,
+    onChange: e => setPlan(p => ({
+      ...p,
+      notes: e.target.value
+    })),
+    style: {
+      ...S.input,
+      height: 60,
+      resize: "vertical"
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: S.timerBox
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      fontSize: 12,
+      marginBottom: 5
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: C.muted
+    }
+  }, "Time used"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: left < 0 ? C.redL : left < 10 ? C.gold : C.green,
+      fontWeight: "bold"
+    }
+  }, total, " / ", info.duration, " min")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "#1a1713",
+      borderRadius: 4,
+      height: 8,
+      overflow: "hidden"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: "100%",
+      borderRadius: 4,
+      width: `${Math.min(100, total / info.duration * 100)}%`,
+      background: left < 0 ? C.red : C.gold,
+      transition: "width .3s"
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: C.muted,
+      marginTop: 5
+    }
+  }, left >= 0 ? `${left} min left` : `${Math.abs(left)} min over`)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      marginTop: 12,
+      flexWrap: "wrap"
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: openShare,
+    style: {
+      ...S.btnPrimary,
+      flex: 1
+    }
+  }, "Send to WhatsApp")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      marginTop: 8
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: savePlan,
+    style: {
+      ...S.btnGhost,
+      flex: 1
+    }
+  }, "Save"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setPlan(blankPlan()),
+    style: {
+      ...S.btnGhost,
+      flex: 1
+    }
+  }, "Start new"))), /*#__PURE__*/React.createElement(Card, {
+    title: "The session shape"
+  }, SHAPE.map(([b, quiet], i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      fontSize: 12.5,
+      padding: "4px 0",
+      color: quiet ? C.muted : C.text
+    }
+  }, quiet ? "·" : "▸", " ", b)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      ...S.tipPill,
+      marginTop: 10
+    }
+  }, "⚡ ", /*#__PURE__*/React.createElement("b", null, "Fewer coaches:"), " same drill, 2–3 parallel groups. Nothing to time.", /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("b", null, "Big numbers:"), " different drills at stations, rotate every 10–12 min.", /*#__PURE__*/React.createElement("br", null), "Either way — one theme, three coaching points."))), /*#__PURE__*/React.createElement("div", {
+    style: S.colWide
+  }, /*#__PURE__*/React.createElement(Card, null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      flexWrap: "wrap",
+      gap: 8,
+      marginBottom: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      ...S.cardHd,
+      marginBottom: 0
+    }
+  }, plan.theme || "Untitled session", plan.date && /*#__PURE__*/React.createElement("span", {
+    style: S.datePill
+  }, new Date(plan.date + "T12:00").toLocaleDateString("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "short"
+  }))), /*#__PURE__*/React.createElement("span", {
+    style: S.badge
+  }, info.label, " · ", info.start)), plan.points.some(p => p) && /*#__PURE__*/React.createElement("div", {
+    style: S.pointsBox
+  }, plan.points.filter(p => p).map((p, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      fontSize: 12.5,
+      color: C.goldL,
+      marginBottom: 3
+    }
+  }, i + 1, ". ", p))), plan.drills.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    style: S.empty
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 32,
+      marginBottom: 10
+    }
+  }, "🐆"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: C.muted,
+      marginBottom: 14
+    }
+  }, "Add drills from the list, or load a ready-made session."), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      flexWrap: "wrap",
+      justifyContent: "center"
+    }
+  }, BLOCK.map(b => /*#__PURE__*/React.createElement("button", {
+    key: b.n,
+    onClick: () => loadBlock(b),
+    style: S.blockBtn
+  }, "Session ", b.n)))) : /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 10
+    }
+  }, plan.drills.map((d, i) => /*#__PURE__*/React.createElement("div", {
+    key: d.id,
+    style: S.drillRow
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      gap: 4,
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => move(i, i - 1),
+    disabled: i === 0,
+    style: {
+      ...S.moveBtn,
+      opacity: i === 0 ? 0.25 : 1
+    },
+    "aria-label": "Move up"
+  }, "▲"), /*#__PURE__*/React.createElement("div", {
+    style: S.drillNum
+  }, i + 1), /*#__PURE__*/React.createElement("button", {
+    onClick: () => move(i, i + 1),
+    disabled: i === plan.drills.length - 1,
+    style: {
+      ...S.moveBtn,
+      opacity: i === plan.drills.length - 1 ? 0.25 : 1
+    },
+    "aria-label": "Move down"
+  }, "▼")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      flexWrap: "wrap"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontWeight: "bold",
+      color: C.text,
+      fontSize: 14
+    }
+  }, dn(d)), /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: 8,
+      height: 8,
+      borderRadius: "50%",
+      background: ECOLOR[d.energy]
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    style: S.catPill
+  }, d.cat)), /*#__PURE__*/React.createElement(DrillBody, {
+    d: d
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "flex-end",
+      gap: 6,
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: S.durPill
+  }, d.dur, "m"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => remDrill(d.id),
+    style: S.xBtn,
+    "aria-label": `Remove ${dn(d)}`
+  }, "✕"))))))), /*#__PURE__*/React.createElement("div", {
+    style: S.colNarrow
+  }, /*#__PURE__*/React.createElement(Card, {
+    title: "Add drills"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 5,
+      flexWrap: "wrap",
+      marginBottom: 10
+    }
+  }, CATS.map(c => /*#__PURE__*/React.createElement("button", {
+    key: c,
+    onClick: () => setCat(c),
+    style: {
+      ...S.catBtn,
+      ...(cat === c ? S.catBtnOn : {})
+    }
+  }, c))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 7,
+      maxHeight: 440,
+      overflowY: "auto"
+    }
+  }, list.map(d => {
+    const added = !!plan.drills.find(x => x.id === d.id);
+    return /*#__PURE__*/React.createElement("div", {
+      key: d.id,
+      onClick: () => !added && addDrill(d),
+      style: {
+        ...S.pickCard,
+        opacity: added ? 0.4 : 1,
+        cursor: added ? "default" : "pointer"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 6
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontWeight: "bold",
+        fontSize: 13,
+        flex: 1,
+        color: C.text
+      }
+    }, dn(d)), /*#__PURE__*/React.createElement("span", {
+      style: {
+        width: 7,
+        height: 7,
+        borderRadius: "50%",
+        background: ECOLOR[d.energy]
+      }
+    }), /*#__PURE__*/React.createElement("span", {
+      style: S.durPill
+    }, d.dur, "m")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.muted,
+        marginTop: 2
+      }
+    }, d.equip));
+  })))));
+}
+function VisualsTab({
+  sel,
+  setSel
+}) {
+  const d = DIAGRAMS.find(x => x.id === sel) || DIAGRAMS[0];
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: 14
+    }
+  }, /*#__PURE__*/React.createElement(Card, {
+    title: "Show the kids",
+    style: {
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: C.muted,
+      fontSize: 13,
+      marginBottom: 14
+    }
+  }, "Hold the phone up and point at it. Faster than explaining, and they remember pictures."), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      flexWrap: "wrap",
+      marginBottom: 16
+    }
+  }, DIAGRAMS.map(x => /*#__PURE__*/React.createElement("button", {
+    key: x.id,
+    onClick: () => setSel(x.id),
+    style: {
+      ...S.diagBtn,
+      ...(sel === x.id ? S.diagBtnOn : {})
+    }
+  }, x.icon, " ", x.label))), /*#__PURE__*/React.createElement("div", {
+    style: S.diagCard
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: "bold",
+      color: C.gold,
+      fontSize: 16,
+      marginBottom: 4
+    }
+  }, d.icon, " ", d.label), /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: C.muted,
+      fontSize: 13,
+      marginBottom: 14
+    }
+  }, d.desc), /*#__PURE__*/React.createElement("div", {
+    style: {
+      maxWidth: 520,
+      margin: "0 auto"
+    }
+  }, /*#__PURE__*/React.createElement(PitchDiagram, {
+    type: d.id
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "center",
+      gap: 16,
+      marginTop: 12,
+      flexWrap: "wrap"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      color: C.muted
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: "inline-block",
+      width: 10,
+      height: 10,
+      borderRadius: "50%",
+      background: C.gold,
+      marginRight: 4
+    }
+  }), "Panthers"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      color: C.muted
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: "inline-block",
+      width: 10,
+      height: 10,
+      borderRadius: "50%",
+      background: C.red,
+      marginRight: 4
+    }
+  }), "Defenders")))), /*#__PURE__*/React.createElement(Card, {
+    title: "All diagrams"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fill,minmax(270px,1fr))",
+      gap: 14,
+      marginTop: 8
+    }
+  }, DIAGRAMS.map(x => /*#__PURE__*/React.createElement("div", {
+    key: x.id,
+    style: {
+      background: C.panel2,
+      border: `1px solid ${C.line}`,
+      borderRadius: 8,
+      padding: 12,
+      cursor: "pointer"
+    },
+    onClick: () => setSel(x.id)
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: "bold",
+      color: C.gold,
+      marginBottom: 6,
+      fontSize: 13
+    }
+  }, x.icon, " ", x.label), /*#__PURE__*/React.createElement(PitchDiagram, {
+    type: x.id
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: C.muted,
+      marginTop: 8
+    }
+  }, x.desc))))));
+}
+function LibraryTab({
+  cat,
+  setCat,
+  addDrill,
+  goPlanner,
+  dn,
+  rename
+}) {
+  const [editing, setEditing] = useState(null);
+  const [draft, setDraft] = useState("");
+  const list = cat === "All" ? DRILLS : DRILLS.filter(d => d.cat === cat);
+  const start = d => {
+    setEditing(d.id);
+    setDraft(dn(d));
+  };
+  const commit = d => {
+    rename(d.id, draft.trim() === d.name ? null : draft.trim());
+    setEditing(null);
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: 14
+    }
+  }, /*#__PURE__*/React.createElement(Card, {
+    title: "Drill library"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      flexWrap: "wrap",
+      marginBottom: 16
+    }
+  }, CATS.map(c => /*#__PURE__*/React.createElement("button", {
+    key: c,
+    onClick: () => setCat(c),
+    style: {
+      ...S.catBtn,
+      ...(cat === c ? S.catBtnOn : {})
+    }
+  }, c))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fill,minmax(290px,1fr))",
+      gap: 14
+    }
+  }, list.map(d => /*#__PURE__*/React.createElement("div", {
+    key: d.id,
+    style: S.libCard
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      gap: 8
+    }
+  }, editing === d.id ? /*#__PURE__*/React.createElement("input", {
+    value: draft,
+    onChange: e => setDraft(e.target.value),
+    autoFocus: true,
+    onKeyDown: e => {
+      if (e.key === "Enter") commit(d);
+      if (e.key === "Escape") setEditing(null);
+    },
+    style: {
+      ...S.input,
+      fontSize: 14,
+      fontWeight: 700
+    }
+  }) : /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: "bold",
+      fontSize: 15,
+      color: C.text
+    }
+  }, dn(d)), /*#__PURE__*/React.createElement("span", {
+    style: S.durPill
+  }, d.dur, "m")), editing === d.id ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      marginTop: 8,
+      flexWrap: "wrap"
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => commit(d),
+    style: {
+      ...S.btnPrimary,
+      fontSize: 11,
+      padding: "7px 11px"
+    }
+  }, "Save name"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setEditing(null),
+    style: {
+      ...S.btnGhost,
+      fontSize: 11,
+      padding: "7px 11px"
+    }
+  }, "Cancel"), dn(d) !== d.name && /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      rename(d.id, null);
+      setEditing(null);
+    },
+    style: {
+      ...S.btnGhost,
+      fontSize: 11,
+      padding: "7px 11px"
+    }
+  }, "Reset")) : /*#__PURE__*/React.createElement("button", {
+    onClick: () => start(d),
+    style: {
+      ...S.btnGhost,
+      fontSize: 10.5,
+      padding: "5px 10px",
+      marginTop: 6
+    }
+  }, "Rename"), dn(d) !== d.name && editing !== d.id && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10.5,
+      color: C.muted,
+      marginTop: 5
+    }
+  }, "Originally: ", d.name), /*#__PURE__*/React.createElement(DrillBody, {
+    d: d
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      addDrill(d);
+      goPlanner();
+    },
+    style: {
+      ...S.btnGhost,
+      marginTop: 12,
+      width: "100%"
+    }
+  }, "Add to plan"))))));
+}
+function SavedTab({
+  plans,
+  loadPlan,
+  newPlan,
+  deletePlan,
+  loading,
+  share,
+  dn
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: 14
+    }
+  }, /*#__PURE__*/React.createElement(Card, null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      flexWrap: "wrap",
+      gap: 8,
+      marginBottom: 8
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      ...S.cardHd,
+      marginBottom: 0
+    }
+  }, "Saved sessions"), /*#__PURE__*/React.createElement("button", {
+    onClick: newPlan,
+    style: S.btnPrimary
+  }, "New session")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: C.muted,
+      marginBottom: 16
+    }
+  }, "Shared with everyone using this app — all coaches can see and edit these."), loading ? /*#__PURE__*/React.createElement("div", {
+    style: S.empty
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: C.muted
+    }
+  }, "Loading…")) : plans.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    style: S.empty
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 32,
+      marginBottom: 10
+    }
+  }, "📋"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: C.muted
+    }
+  }, "Nothing saved yet. Build one in the planner and everyone will see it here.")) : /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))",
+      gap: 14
+    }
+  }, [...plans].sort((a, b) => a.date > b.date ? -1 : 1).map(p => /*#__PURE__*/React.createElement("div", {
+    key: p.id,
+    style: S.libCard
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      gap: 8,
+      marginBottom: 4
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: "bold",
+      fontSize: 14.5,
+      color: C.text
+    }
+  }, p.theme || "Untitled session"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      ...S.badge,
+      flexShrink: 0
+    }
+  }, SESSION_TYPES[p.type].label)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: C.muted,
+      marginBottom: 10
+    }
+  }, p.date ? new Date(p.date + "T12:00").toLocaleDateString("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long"
+  }) : "No date set"), p.points?.filter(x => x).map((x, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      fontSize: 12,
+      color: C.green,
+      marginBottom: 2
+    }
+  }, i + 1, ". ", x)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexWrap: "wrap",
+      gap: 5,
+      margin: "8px 0"
+    }
+  }, p.drills.map(d => /*#__PURE__*/React.createElement("span", {
+    key: d.id,
+    style: S.ptPill
+  }, dn(d)))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      marginTop: 10,
+      flexWrap: "wrap"
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => share(p),
+    style: {
+      ...S.btnPrimary,
+      fontSize: 12,
+      padding: "7px 12px"
+    }
+  }, "WhatsApp"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => loadPlan(p),
+    style: {
+      ...S.btnGhost,
+      fontSize: 12,
+      padding: "7px 12px"
+    }
+  }, "Open"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => deletePlan(p.id),
+    style: {
+      ...S.btnGhost,
+      fontSize: 12,
+      padding: "7px 12px",
+      color: C.redL
+    }
+  }, "Delete")))))));
+}
+function LawsTab() {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: 14
+    }
+  }, /*#__PURE__*/React.createElement(Card, {
+    title: "U10 / P5 — Age Grade Law Variations"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: C.muted,
+      fontSize: 13,
+      marginBottom: 16
+    }
+  }, "Scottish Rugby strapline: ", /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: C.gold
+    }
+  }, "Refine the Core Skills"), " — same skills as P4, bigger pitch, more players."), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fill,minmax(150px,1fr))",
+      gap: 10,
+      marginBottom: 22
+    }
+  }, LAW_TILES.map(l => /*#__PURE__*/React.createElement("div", {
+    key: l.title,
+    style: S.lawTile
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 20,
+      marginBottom: 5
+    }
+  }, l.icon), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: "bold",
+      color: C.gold,
+      fontSize: 11.5,
+      marginBottom: 3
+    }
+  }, l.title), /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: C.text,
+      fontSize: 12
+    }
+  }, l.value)))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))",
+      gap: 14
+    }
+  }, LAW_CARDS.map(l => /*#__PURE__*/React.createElement("div", {
+    key: l.title,
+    style: S.libCard
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 19,
+      marginBottom: 5
+    }
+  }, l.icon), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: "bold",
+      color: C.gold,
+      fontSize: 14,
+      marginBottom: 6
+    }
+  }, l.title), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: C.tan,
+      lineHeight: 1.7
+    }
+  }, l.body))))));
+}
+
+// ── PLAYERS / STANDING POSITIONS ─────────────────────────────
+const STANDS = [{
+  id: "kickoff",
+  label: "Our kick off",
+  note: "Any kick from the centre, must travel 5m. Spread across the width so we can chase in a line, not a bunch.",
+  say: "Chase together · Nobody offside in front of the kicker",
+  ours: [[170, 108, "K"], [120, 55, ""], [120, 160, ""], [150, 35, ""], [150, 182, ""], [135, 108, ""]],
+  theirs: [[230, 45, ""], [230, 108, ""], [230, 172, ""], [265, 70, ""], [265, 148, ""], [292, 108, ""]],
+  lines: [[170, 108, 205, 108]]
+}, {
+  id: "receive",
+  label: "Their kick off",
+  note: "We must be 5m back. Front three take the ball, back three cover the space behind.",
+  say: "Front three: two hands, call it early · Back three: cover the space",
+  ours: [[205, 55, ""], [205, 108, ""], [205, 160, ""], [255, 70, ""], [255, 148, ""], [285, 108, ""]],
+  theirs: [[135, 108, "K"], [100, 60, ""], [100, 158, ""], [125, 35, ""], [125, 182, ""], [80, 108, ""]],
+  lines: []
+}, {
+  id: "defend",
+  label: "Defending",
+  note: "Six across 30m is about 5m each. Everyone has someone. Move up as one line — the fastest player rushing out is what makes the gap.",
+  say: "Arm's length plus · Call your player · Move up together",
+  ours: [[205, 35, ""], [205, 78, ""], [205, 120, ""], [205, 162, ""], [205, 200, ""], [245, 108, ""]],
+  theirs: [[120, 35, ""], [120, 78, ""], [120, 120, ""], [120, 162, ""], [120, 200, ""], [85, 108, ""]],
+  lines: []
+}, {
+  id: "aftertackle",
+  label: "After a tackle",
+  note: "First player there is our 9 and passes it away. One player takes the pass. Everyone else gets width — nobody else goes near the ball.",
+  say: "First there is 9 · Everyone else spread",
+  ours: [[95, 108, "9"], [140, 88, ""], [190, 55, ""], [225, 130, ""], [265, 78, ""], [290, 165, ""]],
+  theirs: [[135, 150, ""], [180, 175, ""], [225, 195, ""], [265, 205, ""]],
+  lines: [[107, 105, 130, 93], [152, 85, 178, 62]],
+  ball: [78, 108]
+}];
+
+// Shared item renderer — used by the builder and by saved team setups
+function drawItem(it) {
+  const disc = (fill, label, txtCol) => /*#__PURE__*/React.createElement("g", {
+    key: it.id
+  }, /*#__PURE__*/React.createElement("circle", {
+    cx: it.x,
+    cy: it.y,
+    r: 10,
+    fill: fill,
+    stroke: "rgba(0,0,0,0.55)",
+    strokeWidth: 1.6
+  }), /*#__PURE__*/React.createElement("text", {
+    x: it.x,
+    y: it.y + 4,
+    textAnchor: "middle",
+    fill: txtCol,
+    fontSize: 10,
+    fontWeight: "bold"
+  }, label));
+  switch (it.type) {
+    case "A":
+      return disc(IC.A, "A", "#000");
+    case "D":
+      return disc(IC.D, "D", "#fff");
+    case "num":
+      return disc(IC.num, String(it.n), "#000");
+    case "nine":
+      return disc(IC.A, "9", "#000");
+    case "cone":
+      return /*#__PURE__*/React.createElement("polygon", {
+        key: it.id,
+        points: `${it.x},${it.y - 9} ${it.x - 7},${it.y + 5} ${it.x + 7},${it.y + 5}`,
+        fill: IC.cone,
+        stroke: "rgba(0,0,0,0.5)"
+      });
+    case "ball":
+      return /*#__PURE__*/React.createElement("ellipse", {
+        key: it.id,
+        cx: it.x,
+        cy: it.y,
+        rx: 7,
+        ry: 4.5,
+        fill: IC.ball,
+        stroke: "#000",
+        strokeWidth: 1.2
+      });
+    case "run":
+      return /*#__PURE__*/React.createElement("line", {
+        key: it.id,
+        x1: it.x,
+        y1: it.y,
+        x2: it.x2,
+        y2: it.y2,
+        stroke: IC.run,
+        strokeWidth: 2.6,
+        markerEnd: "url(#bag)"
+      });
+    case "pass":
+      return /*#__PURE__*/React.createElement("line", {
+        key: it.id,
+        x1: it.x,
+        y1: it.y,
+        x2: it.x2,
+        y2: it.y2,
+        stroke: IC.pass,
+        strokeWidth: 2.4,
+        strokeDasharray: "7,4",
+        markerEnd: "url(#bat)"
+      });
+    case "text":
+      return /*#__PURE__*/React.createElement("text", {
+        key: it.id,
+        x: it.x,
+        y: it.y,
+        textAnchor: "middle",
+        fill: IC.text,
+        fontSize: 12.5,
+        fontWeight: "bold",
+        stroke: "#000",
+        strokeWidth: 0.6,
+        paintOrder: "stroke"
+      }, it.text);
+    default:
+      return null;
+  }
+}
+function PitchBg({
+  bg
+}) {
+  const FULL = 7,
+    PX = 30,
+    PY = 12,
+    PW = 280,
+    PH = 210;
+  if (bg !== "pitch") return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
+    x: 22,
+    y: 12,
+    width: 296,
+    height: 216,
+    fill: "#123d1a",
+    rx: 3,
+    stroke: "rgba(252,252,252,0.7)",
+    strokeWidth: 1.3
+  }), [80, 140, 200, 260].map(x => /*#__PURE__*/React.createElement("line", {
+    key: x,
+    x1: x,
+    y1: 12,
+    x2: x,
+    y2: 228,
+    stroke: "rgba(252,252,252,0.09)"
+  })), [66, 120, 174].map(y => /*#__PURE__*/React.createElement("line", {
+    key: y,
+    x1: 22,
+    y1: y,
+    x2: 318,
+    y2: y,
+    stroke: "rgba(252,252,252,0.09)"
+  })));
+  return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
+    x: PX,
+    y: PY,
+    width: PW,
+    height: PH,
+    fill: "#123d1a",
+    rx: 3
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: PX,
+    y: PY,
+    width: 5 * FULL,
+    height: PH,
+    fill: "#0e3315"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: PX + PW - 5 * FULL,
+    y: PY,
+    width: 5 * FULL,
+    height: PH,
+    fill: "#0e3315"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: PX,
+    y: PY,
+    width: PW,
+    height: PH,
+    fill: "none",
+    stroke: "rgba(252,252,252,0.8)",
+    strokeWidth: 1.4,
+    rx: 3
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: PX + 5 * FULL,
+    y1: PY,
+    x2: PX + 5 * FULL,
+    y2: PY + PH,
+    stroke: "rgba(252,252,252,0.5)"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: PX + PW - 5 * FULL,
+    y1: PY,
+    x2: PX + PW - 5 * FULL,
+    y2: PY + PH,
+    stroke: "rgba(252,252,252,0.5)"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: PX + PW / 2,
+    y1: PY,
+    x2: PX + PW / 2,
+    y2: PY + PH,
+    stroke: "rgba(252,252,252,0.22)",
+    strokeDasharray: "4,4"
+  }), /*#__PURE__*/React.createElement("text", {
+    x: PX + PW / 2,
+    y: PY - 3,
+    textAnchor: "middle",
+    fill: C.tan,
+    fontSize: 8
+  }, "40m x 30m · we attack right"));
+}
+function Markers() {
+  return /*#__PURE__*/React.createElement("defs", null, /*#__PURE__*/React.createElement("marker", {
+    id: "bag",
+    markerWidth: "6",
+    markerHeight: "6",
+    refX: "3",
+    refY: "3",
+    orient: "auto"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M0,0 L0,6 L6,3 z",
+    fill: IC.run
+  })), /*#__PURE__*/React.createElement("marker", {
+    id: "bat",
+    markerWidth: "6",
+    markerHeight: "6",
+    refX: "3",
+    refY: "3",
+    orient: "auto"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M0,0 L0,6 L6,3 z",
+    fill: IC.pass
+  })));
+}
+
+// Turn a built-in setup into editable builder items
+function standToItems(st) {
+  let n = 0;
+  const out = [];
+  (st.ours || []).forEach(([x, y, l]) => out.push({
+    id: ++n,
+    type: l === "9" ? "nine" : "A",
+    x,
+    y
+  }));
+  (st.theirs || []).forEach(([x, y]) => out.push({
+    id: ++n,
+    type: "D",
+    x,
+    y
+  }));
+  (st.lines || []).forEach(([x1, y1, x2, y2]) => out.push({
+    id: ++n,
+    type: "run",
+    x: x1,
+    y: y1,
+    x2,
+    y2
+  }));
+  if (st.ball) out.push({
+    id: ++n,
+    type: "ball",
+    x: st.ball[0],
+    y: st.ball[1]
+  });
+  return out;
+}
+function PlayersTab({
+  sel,
+  setSel,
+  setups,
+  editSetup,
+  newSetup,
+  deleteDiagram
+}) {
+  const all = [...STANDS.map(x => ({
+    key: x.id,
+    label: x.label,
+    builtin: x,
+    custom: null
+  })), ...setups.map(d => ({
+    key: "c" + d.id,
+    label: d.name,
+    builtin: null,
+    custom: d
+  }))];
+  const cur = all.find(x => x.key === sel) || all[0];
+  const st = cur.builtin;
+  const cd = cur.custom;
+  const dot = (x, y, l, ours) => /*#__PURE__*/React.createElement("g", {
+    key: `${x}-${y}-${l}-${ours}`
+  }, /*#__PURE__*/React.createElement("circle", {
+    cx: x,
+    cy: y,
+    r: 10,
+    fill: ours ? IC.A : IC.D,
+    stroke: "rgba(0,0,0,0.55)",
+    strokeWidth: 1.6
+  }), l && /*#__PURE__*/React.createElement("text", {
+    x: x,
+    y: y + 4,
+    textAnchor: "middle",
+    fill: ours ? "#000" : "#fff",
+    fontSize: 10,
+    fontWeight: "bold"
+  }, l));
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: 14
+    }
+  }, /*#__PURE__*/React.createElement(Card, {
+    title: "Where they stand"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: C.muted,
+      fontSize: 13,
+      marginBottom: 14,
+      lineHeight: 1.6
+    }
+  }, "Hold this up and show them. The four built-in ones are a starting point — edit any of them, or add your own."), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      flexWrap: "wrap",
+      marginBottom: 16
+    }
+  }, all.map(x => /*#__PURE__*/React.createElement("button", {
+    key: x.key,
+    onClick: () => setSel(x.key),
+    style: {
+      ...S.diagBtn,
+      ...(sel === x.key ? S.diagBtnOn : {})
+    }
+  }, x.custom ? "★ " : "", x.label)), /*#__PURE__*/React.createElement("button", {
+    onClick: newSetup,
+    style: {
+      ...S.diagBtn,
+      borderStyle: "dashed"
+    }
+  }, "+ New setup")), /*#__PURE__*/React.createElement("div", {
+    style: S.diagCard
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: 10,
+      flexWrap: "wrap",
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 700,
+      color: C.gold,
+      fontSize: 15
+    }
+  }, cur.label), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => editSetup(cd ? cd : {
+      name: st.label,
+      bg: "pitch",
+      items: standToItems(st)
+    }),
+    style: {
+      ...S.btnGhost,
+      fontSize: 11,
+      padding: "6px 11px"
+    }
+  }, "Edit in Draw"), cd && /*#__PURE__*/React.createElement("button", {
+    onClick: () => deleteDiagram(cd.id),
+    style: {
+      ...S.btnGhost,
+      fontSize: 11,
+      padding: "6px 11px",
+      color: C.redL
+    }
+  }, "Delete"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      maxWidth: 520,
+      margin: "0 auto"
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    viewBox: "0 0 340 250",
+    style: {
+      width: "100%",
+      borderRadius: 4,
+      display: "block"
+    }
+  }, /*#__PURE__*/React.createElement(Markers, null), /*#__PURE__*/React.createElement(PitchBg, {
+    bg: cd ? cd.bg : "pitch"
+  }), cd ? cd.items.map(drawItem) : /*#__PURE__*/React.createElement(React.Fragment, null, (st.lines || []).map(([x1, y1, x2, y2], i) => /*#__PURE__*/React.createElement("line", {
+    key: i,
+    x1: x1,
+    y1: y1,
+    x2: x2,
+    y2: y2,
+    stroke: IC.run,
+    strokeWidth: 2.4,
+    markerEnd: "url(#bag)"
+  })), st.ball && /*#__PURE__*/React.createElement("ellipse", {
+    cx: st.ball[0],
+    cy: st.ball[1],
+    rx: 7,
+    ry: 4.5,
+    fill: IC.ball,
+    stroke: "#000",
+    strokeWidth: 1.2
+  }), st.ours.map(([x, y, l]) => dot(x, y, l, true)), st.theirs.map(([x, y, l]) => dot(x, y, l, false))))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "center",
+      gap: 18,
+      marginTop: 10,
+      flexWrap: "wrap"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      color: C.muted
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: "inline-block",
+      width: 10,
+      height: 10,
+      borderRadius: "50%",
+      background: IC.A,
+      marginRight: 5
+    }
+  }), "Panthers"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      color: C.muted
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: "inline-block",
+      width: 10,
+      height: 10,
+      borderRadius: "50%",
+      background: IC.D,
+      marginRight: 5
+    }
+  }), "Them")), st && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: C.tan,
+      lineHeight: 1.7,
+      marginTop: 14
+    }
+  }, st.note), /*#__PURE__*/React.createElement("div", {
+    style: S.tipPill
+  }, "⚡ ", st.say)))));
+}
+
+// ── DRILL BUILDER ────────────────────────────────────────────
+// One colour per item type — nothing shares a colour
+const IC = {
+  A: "#F2A81B",
+  // attacker — gold
+  D: "#E04A3F",
+  // defender — red
+  num: "#FFFFFF",
+  // numbered player — white
+  cone: "#FF7A1A",
+  // cone — orange
+  ball: "#C9A227",
+  // ball — olive gold
+  run: "#4CC15E",
+  // run — green
+  pass: "#3FA9E0",
+  // pass — blue
+  text: "#F5F0E6" // label — off white
+};
+const TOOLS = [{
+  k: "A",
+  label: "Attacker",
+  c: IC.A
+}, {
+  k: "D",
+  label: "Defender",
+  c: IC.D
+}, {
+  k: "num",
+  label: "Player 1,2,3…",
+  c: IC.num
+}, {
+  k: "nine",
+  label: "The 9",
+  c: IC.A
+}, {
+  k: "cone",
+  label: "Cone",
+  c: IC.cone
+}, {
+  k: "ball",
+  label: "Ball",
+  c: IC.ball
+}, {
+  k: "run",
+  label: "Run →",
+  c: IC.run
+}, {
+  k: "pass",
+  label: "Pass ⇢",
+  c: IC.pass
+}, {
+  k: "text",
+  label: "Label",
+  c: IC.text
+}, {
+  k: "erase",
+  label: "Erase",
+  c: C.muted
+}];
+function BuilderTab({
+  diagrams,
+  saveDiagram,
+  deleteDiagram,
+  flash,
+  seed,
+  clearSeed
+}) {
+  const [tool, setTool] = useState("A");
+  const [items, setItems] = useState([]);
+  const [pending, setPending] = useState(null);
+  const [labelText, setLabelText] = useState("");
+  const [name, setName] = useState("");
+  const [bg, setBg] = useState("pitch");
+  const [kind, setKind] = useState("drill");
+  useEffect(() => {
+    if (!seed) return;
+    setItems(seed.items || []);
+    setName(seed.name || "");
+    setBg(seed.bg || "pitch");
+    setKind(seed.kind || "setup");
+    clearSeed();
+  }, [seed]);
+  const VW = 340,
+    VH = 262;
+  const coords = e => {
+    const r = e.currentTarget.getBoundingClientRect();
+    return {
+      x: Math.round((e.clientX - r.left) / r.width * VW),
+      y: Math.round((e.clientY - r.top) / r.height * VH)
+    };
+  };
+  const tap = e => {
+    const {
+      x,
+      y
+    } = coords(e);
+    if (tool === "erase") {
+      let best = null,
+        bestD = 24 * 24;
+      items.forEach(it => {
+        const cx = it.x2 !== undefined ? (it.x + it.x2) / 2 : it.x;
+        const cy = it.y2 !== undefined ? (it.y + it.y2) / 2 : it.y;
+        const d = (cx - x) ** 2 + (cy - y) ** 2;
+        if (d < bestD) {
+          bestD = d;
+          best = it.id;
+        }
+      });
+      if (best !== null) setItems(a => a.filter(it => it.id !== best));
+      return;
+    }
+    if (tool === "run" || tool === "pass") {
+      if (!pending) {
+        setPending({
+          x,
+          y
+        });
+        return;
+      }
+      setItems(a => [...a, {
+        id: Date.now(),
+        type: tool,
+        x: pending.x,
+        y: pending.y,
+        x2: x,
+        y2: y
+      }]);
+      setPending(null);
+      return;
+    }
+    if (tool === "text") {
+      if (!labelText.trim()) return flash("Type the label first, then tap the pitch");
+      setItems(a => [...a, {
+        id: Date.now(),
+        type: "text",
+        x,
+        y,
+        text: labelText.trim()
+      }]);
+      return;
+    }
+    if (tool === "num") {
+      const n = items.filter(i => i.type === "num").length + 1;
+      setItems(a => [...a, {
+        id: Date.now(),
+        type: "num",
+        x,
+        y,
+        n
+      }]);
+      return;
+    }
+    setItems(a => [...a, {
+      id: Date.now(),
+      type: tool,
+      x,
+      y
+    }]);
+  };
+  const undo = () => {
+    setPending(null);
+    setItems(a => a.slice(0, -1));
+  };
+  const clear = () => {
+    setPending(null);
+    setItems([]);
+  };
+  const doSave = () => {
+    if (!name.trim()) return flash("Give it a name first");
+    if (!items.length) return flash("Nothing on the pitch yet");
+    saveDiagram({
+      id: Date.now(),
+      name: name.trim(),
+      bg,
+      items,
+      kind
+    });
+    flash(kind === "setup" ? "Setup saved — it's in the Players tab" : "Drill saved for all coaches");
+  };
+  const load = d => {
+    setItems(d.items);
+    setBg(d.bg || "pitch");
+    setName(d.name);
+    setKind(d.kind || "drill");
+  };
+  const FULL = 7,
+    PX = 30,
+    PY = 12,
+    PW = 280,
+    PH = 210;
+  const disc = (it, fill, label, txtCol) => /*#__PURE__*/React.createElement("g", {
+    key: it.id
+  }, /*#__PURE__*/React.createElement("circle", {
+    cx: it.x,
+    cy: it.y,
+    r: 10,
+    fill: fill,
+    stroke: "rgba(0,0,0,0.55)",
+    strokeWidth: 1.6
+  }), /*#__PURE__*/React.createElement("text", {
+    x: it.x,
+    y: it.y + 4,
+    textAnchor: "middle",
+    fill: txtCol,
+    fontSize: 10,
+    fontWeight: "bold"
+  }, label));
+  const draw = it => {
+    switch (it.type) {
+      case "A":
+        return disc(it, IC.A, "A", "#000");
+      case "D":
+        return disc(it, IC.D, "D", "#fff");
+      case "num":
+        return disc(it, IC.num, String(it.n), "#000");
+      case "nine":
+        return disc(it, IC.A, "9", "#000");
+      case "cone":
+        return /*#__PURE__*/React.createElement("polygon", {
+          key: it.id,
+          points: `${it.x},${it.y - 9} ${it.x - 7},${it.y + 5} ${it.x + 7},${it.y + 5}`,
+          fill: IC.cone,
+          stroke: "rgba(0,0,0,0.5)"
+        });
+      case "ball":
+        return /*#__PURE__*/React.createElement("ellipse", {
+          key: it.id,
+          cx: it.x,
+          cy: it.y,
+          rx: 7,
+          ry: 4.5,
+          fill: IC.ball,
+          stroke: "#000",
+          strokeWidth: 1.2
+        });
+      case "run":
+        return /*#__PURE__*/React.createElement("line", {
+          key: it.id,
+          x1: it.x,
+          y1: it.y,
+          x2: it.x2,
+          y2: it.y2,
+          stroke: IC.run,
+          strokeWidth: 2.6,
+          markerEnd: "url(#bag)"
+        });
+      case "pass":
+        return /*#__PURE__*/React.createElement("line", {
+          key: it.id,
+          x1: it.x,
+          y1: it.y,
+          x2: it.x2,
+          y2: it.y2,
+          stroke: IC.pass,
+          strokeWidth: 2.4,
+          strokeDasharray: "7,4",
+          markerEnd: "url(#bat)"
+        });
+      case "text":
+        return /*#__PURE__*/React.createElement("text", {
+          key: it.id,
+          x: it.x,
+          y: it.y,
+          textAnchor: "middle",
+          fill: IC.text,
+          fontSize: 12.5,
+          fontWeight: "bold",
+          stroke: "#000",
+          strokeWidth: 0.6,
+          paintOrder: "stroke"
+        }, it.text);
+      default:
+        return null;
+    }
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: S.cols
+  }, /*#__PURE__*/React.createElement("div", {
+    style: S.colWide
+  }, /*#__PURE__*/React.createElement(Card, {
+    title: "Draw your drill"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      flexWrap: "wrap",
+      marginBottom: 10
+    }
+  }, TOOLS.map(t => /*#__PURE__*/React.createElement("button", {
+    key: t.k,
+    onClick: () => {
+      setTool(t.k);
+      setPending(null);
+    },
+    style: {
+      ...S.catBtn,
+      padding: "8px 12px",
+      fontSize: 12.5,
+      display: "flex",
+      alignItems: "center",
+      gap: 7,
+      background: tool === t.k ? t.c : C.panel2,
+      color: tool === t.k ? t.k === "num" || t.k === "text" ? "#000" : "#000" : C.text,
+      border: `1px solid ${tool === t.k ? t.c : C.line}`,
+      fontWeight: tool === t.k ? 800 : 600
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: 9,
+      height: 9,
+      borderRadius: "50%",
+      background: t.c,
+      border: "1px solid rgba(0,0,0,0.35)"
+    }
+  }), t.label))), tool === "text" && /*#__PURE__*/React.createElement("input", {
+    value: labelText,
+    onChange: e => setLabelText(e.target.value),
+    placeholder: "Type the label, then tap the pitch",
+    style: {
+      ...S.input,
+      marginBottom: 10
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11.5,
+      color: pending ? C.gold : C.muted,
+      marginBottom: 8
+    }
+  }, tool === "erase" ? "Tap anything to remove it." : tool === "run" || tool === "pass" ? pending ? "Now tap where it ends." : "Tap where it starts, then where it ends." : tool === "text" ? "Type a label above, then tap the pitch." : "Tap the pitch to place."), /*#__PURE__*/React.createElement("svg", {
+    viewBox: `0 0 ${VW} ${VH}`,
+    onClick: tap,
+    style: {
+      width: "100%",
+      borderRadius: 4,
+      display: "block",
+      cursor: "crosshair",
+      touchAction: "manipulation"
+    }
+  }, /*#__PURE__*/React.createElement("defs", null, /*#__PURE__*/React.createElement("marker", {
+    id: "bag",
+    markerWidth: "6",
+    markerHeight: "6",
+    refX: "3",
+    refY: "3",
+    orient: "auto"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M0,0 L0,6 L6,3 z",
+    fill: IC.run
+  })), /*#__PURE__*/React.createElement("marker", {
+    id: "bat",
+    markerWidth: "6",
+    markerHeight: "6",
+    refX: "3",
+    refY: "3",
+    orient: "auto"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M0,0 L0,6 L6,3 z",
+    fill: IC.pass
+  }))), bg === "pitch" ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
+    x: PX,
+    y: PY,
+    width: PW,
+    height: PH,
+    fill: "#123d1a",
+    rx: 3
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: PX,
+    y: PY,
+    width: 5 * FULL,
+    height: PH,
+    fill: "#0e3315"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: PX + PW - 5 * FULL,
+    y: PY,
+    width: 5 * FULL,
+    height: PH,
+    fill: "#0e3315"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: PX,
+    y: PY,
+    width: PW,
+    height: PH,
+    fill: "none",
+    stroke: "rgba(252,252,252,0.8)",
+    strokeWidth: 1.4,
+    rx: 3
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: PX + 5 * FULL,
+    y1: PY,
+    x2: PX + 5 * FULL,
+    y2: PY + PH,
+    stroke: "rgba(252,252,252,0.5)"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: PX + PW - 5 * FULL,
+    y1: PY,
+    x2: PX + PW - 5 * FULL,
+    y2: PY + PH,
+    stroke: "rgba(252,252,252,0.5)"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: PX + PW / 2,
+    y1: PY,
+    x2: PX + PW / 2,
+    y2: PY + PH,
+    stroke: "rgba(252,252,252,0.22)",
+    strokeDasharray: "4,4"
+  }), /*#__PURE__*/React.createElement("text", {
+    x: PX + PW / 2,
+    y: PY - 3,
+    textAnchor: "middle",
+    fill: C.tan,
+    fontSize: 8
+  }, "40m x 30m")) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
+    x: 22,
+    y: 12,
+    width: 296,
+    height: 216,
+    fill: "#123d1a",
+    rx: 3,
+    stroke: "rgba(252,252,252,0.7)",
+    strokeWidth: 1.3
+  }), [80, 140, 200, 260].map(x => /*#__PURE__*/React.createElement("line", {
+    key: x,
+    x1: x,
+    y1: 12,
+    x2: x,
+    y2: 228,
+    stroke: "rgba(252,252,252,0.09)"
+  })), [66, 120, 174].map(y => /*#__PURE__*/React.createElement("line", {
+    key: y,
+    x1: 22,
+    y1: y,
+    x2: 318,
+    y2: y,
+    stroke: "rgba(252,252,252,0.09)"
+  }))), items.map(draw), pending && /*#__PURE__*/React.createElement("circle", {
+    cx: pending.x,
+    cy: pending.y,
+    r: 5,
+    fill: "none",
+    stroke: C.gold,
+    strokeWidth: 2,
+    strokeDasharray: "3,2"
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 12,
+      flexWrap: "wrap",
+      marginTop: 10,
+      padding: "9px 11px",
+      background: C.panel2,
+      borderRadius: 3
+    }
+  }, TOOLS.filter(t => t.k !== "erase").map(t => /*#__PURE__*/React.createElement("span", {
+    key: t.k,
+    style: {
+      fontSize: 10.5,
+      color: C.muted,
+      display: "flex",
+      alignItems: "center",
+      gap: 5
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: 9,
+      height: 9,
+      borderRadius: "50%",
+      background: t.c
+    }
+  }), t.label))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      marginTop: 12,
+      flexWrap: "wrap"
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setBg(bg === "pitch" ? "grid" : "pitch"),
+    style: S.btnGhost
+  }, bg === "pitch" ? "Use blank area" : "Use full pitch"), /*#__PURE__*/React.createElement("button", {
+    onClick: undo,
+    style: S.btnGhost
+  }, "Undo"), /*#__PURE__*/React.createElement("button", {
+    onClick: clear,
+    style: S.btnGhost
+  }, "Clear")))), /*#__PURE__*/React.createElement("div", {
+    style: S.colNarrow
+  }, /*#__PURE__*/React.createElement(Card, {
+    title: "Save it"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: S.label
+  }, "What is it?"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6
+    }
+  }, [["drill", "A drill"], ["setup", "Team setup"]].map(([k, l]) => /*#__PURE__*/React.createElement("button", {
+    key: k,
+    onClick: () => setKind(k),
+    style: {
+      ...S.typBtn,
+      background: kind === k ? C.gold : C.panel2,
+      color: kind === k ? "#000" : C.muted,
+      border: `2px solid ${kind === k ? C.gold : C.line}`
+    }
+  }, l))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: C.muted,
+      marginTop: 6,
+      lineHeight: 1.6
+    }
+  }, kind === "setup" ? "Team setups appear in the Players tab." : "Drills stay here in the Draw tab."), /*#__PURE__*/React.createElement("div", {
+    style: S.label
+  }, "Name"), /*#__PURE__*/React.createElement("input", {
+    value: name,
+    onChange: e => setName(e.target.value),
+    placeholder: kind === "setup" ? "e.g. Defending a free pass" : "e.g. 4 Corners",
+    style: S.input
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: doSave,
+    style: {
+      ...S.btnPrimary,
+      width: "100%",
+      marginTop: 12
+    }
+  }, "Save diagram"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: C.muted,
+      marginTop: 8,
+      lineHeight: 1.6
+    }
+  }, "Saved diagrams are shared — every coach sees them.")), /*#__PURE__*/React.createElement(Card, {
+    title: "Saved diagrams"
+  }, diagrams.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12.5,
+      color: C.muted,
+      lineHeight: 1.6
+    }
+  }, "None yet. Draw one and save it.") : /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 8
+    }
+  }, diagrams.map(d => /*#__PURE__*/React.createElement("div", {
+    key: d.id,
+    style: S.pickCard
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 700,
+      fontSize: 13,
+      color: C.text,
+      marginBottom: 2
+    }
+  }, d.name), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: C.muted,
+      marginBottom: 6,
+      textTransform: "uppercase",
+      letterSpacing: 1
+    }
+  }, d.kind === "setup" ? "Team setup" : "Drill"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => load(d),
+    style: {
+      ...S.btnGhost,
+      fontSize: 11,
+      padding: "6px 10px"
+    }
+  }, "Open"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => deleteDiagram(d.id),
+    style: {
+      ...S.btnGhost,
+      fontSize: 11,
+      padding: "6px 10px",
+      color: C.redL
+    }
+  }, "Delete")))))))));
+}
+
+// ── APP ──────────────────────────────────────────────────────
+function App() {
+  const [tab, setTab] = useState("block");
+  const [plans, setPlans] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [plan, setPlan] = useState(blankPlan());
+  const [cat, setCat] = useState("All");
+  const [sel, setSel] = useState("nine");
+  const [stand, setStand] = useState("defend");
+  const [names, setNames] = useState({});
+  const [seed, setSeed] = useState(null);
+  const [toast, setToast] = useState("");
+  const [diagrams, setDiagrams] = useState([]);
+  const [shareText, setShareText] = useState(null);
+  const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await window.storage.get("panthers-sessions", true);
+        if (r?.value) setPlans(JSON.parse(r.value));
+      } catch {/* nothing saved yet */}
+      try {
+        const d = await window.storage.get("panthers-diagrams", true);
+        if (d?.value) setDiagrams(JSON.parse(d.value));
+      } catch {/* none yet */}
+      try {
+        const n = await window.storage.get("panthers-drill-names", true);
+        if (n?.value) setNames(JSON.parse(n.value));
+      } catch {/* none yet */}
+      setLoading(false);
+    })();
+  }, []);
+  const flash = m => {
+    setToast(m);
+    setTimeout(() => setToast(""), 2600);
+  };
+  const persist = async next => {
+    setPlans(next);
+    try {
+      await window.storage.set("panthers-sessions", JSON.stringify(next), true);
+    } catch {
+      flash("Saved on this device only — couldn't reach shared storage");
+    }
+  };
+  const addDrill = d => setPlan(p => p.drills.find(x => x.id === d.id) ? p : {
+    ...p,
+    drills: [...p.drills, {
+      ...d
+    }]
+  });
+  const remDrill = id => setPlan(p => ({
+    ...p,
+    drills: p.drills.filter(d => d.id !== id)
+  }));
+  const move = (from, to) => setPlan(p => {
+    if (to < 0 || to >= p.drills.length) return p;
+    const a = [...p.drills];
+    const [it] = a.splice(from, 1);
+    a.splice(to, 0, it);
+    return {
+      ...p,
+      drills: a
+    };
+  });
+  const savePlan = () => {
+    if (!plan.date) return flash("Pick a date so everyone knows which Sunday it is");
+    const i = plans.findIndex(x => x.id === plan.id);
+    persist(i >= 0 ? plans.map((x, j) => j === i ? plan : x) : [...plans, plan]);
+    flash("Saved for all coaches");
+  };
+  const deletePlan = id => persist(plans.filter(p => p.id !== id));
+  const persistDiagrams = async next => {
+    setDiagrams(next);
+    try {
+      await window.storage.set("panthers-diagrams", JSON.stringify(next), true);
+    } catch {
+      flash("Saved on this device only");
+    }
+  };
+  const saveDiagram = d => persistDiagrams([...diagrams.filter(x => x.name !== d.name || x.kind !== d.kind), d]);
+  const editSetup = d => {
+    setSeed({
+      ...d,
+      kind: "setup"
+    });
+    setTab("builder");
+  };
+  const newSetup = () => {
+    setSeed({
+      name: "",
+      bg: "pitch",
+      items: [],
+      kind: "setup"
+    });
+    setTab("builder");
+  };
+  const dn = d => d ? names[d.id] || d.name : "";
+  const rename = async (id, custom) => {
+    const next = {
+      ...names
+    };
+    if (custom) next[id] = custom;else delete next[id];
+    setNames(next);
+    try {
+      await window.storage.set("panthers-drill-names", JSON.stringify(next), true);
+    } catch {
+      flash("Renamed here only — couldn't reach shared storage");
+    }
+    flash(custom ? "Renamed for all coaches" : "Name reset");
+  };
+  const deleteDiagram = id => persistDiagrams(diagrams.filter(d => d.id !== id));
+  const loadBlock = b => {
+    setPlan({
+      id: Date.now(),
+      date: "",
+      type: "sunday",
+      theme: `Session ${b.n} — ${b.theme}`,
+      points: [...b.points],
+      notes: "",
+      drills: b.drills.map(id => ({
+        ...findDrill(id)
+      }))
+    });
+    setTab("planner");
+    flash(`Session ${b.n} loaded`);
+  };
+  const share = p => {
+    setShareText(buildMessage(p, dn));
+    setCopied(false);
+  };
+  const doCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(shareText);
+      setCopied(true);
+    } catch {
+      flash("Select the text and copy it manually");
+    }
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    style: S.root
+  }, /*#__PURE__*/React.createElement("div", {
+    style: S.header
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 14
+    }
+  }, /*#__PURE__*/React.createElement("img", { src: "panthers-logo.png", alt: "Panmure Panthers", style: S.mark, onError: function (e) { e.target.style.display = "none"; } }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Wordmark, null), /*#__PURE__*/React.createElement("div", {
+    style: S.sub
+  }, "U10 · P5 Age Group"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      flexWrap: "wrap"
+    }
+  }, [["block", "Sessions"], ["planner", "Planner"], ["visuals", "Visuals"], ["players", "Players"], ["builder", "Draw"], ["library", "Drills"], ["saved", "Saved"], ["laws", "Laws"]].map(([k, l]) => /*#__PURE__*/React.createElement("button", {
+    key: k,
+    onClick: () => setTab(k),
+    style: {
+      ...S.navBtn,
+      ...(tab === k ? S.navBtnOn : {})
+    }
+  }, l)))), /*#__PURE__*/React.createElement("div", {
+    style: S.values
+  }, "Respect · Teamwork · Enjoyment ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: C.gold,
+      fontWeight: 800
+    }
+  }, "#PLAYUPPANMURE")), tab === "block" && /*#__PURE__*/React.createElement(BlockTab, {
+    loadBlock: loadBlock,
+    dn: dn
+  }), tab === "planner" && /*#__PURE__*/React.createElement(PlannerTab, {
+    plan,
+    setPlan,
+    savePlan,
+    cat,
+    setCat,
+    addDrill,
+    remDrill,
+    move,
+    loadBlock,
+    openShare: () => share(plan),
+    dn
+  }), tab === "visuals" && /*#__PURE__*/React.createElement(VisualsTab, {
+    sel: sel,
+    setSel: setSel
+  }), tab === "players" && /*#__PURE__*/React.createElement(PlayersTab, {
+    sel: stand,
+    setSel: setStand,
+    setups: diagrams.filter(d => d.kind === "setup"),
+    editSetup: editSetup,
+    newSetup: newSetup,
+    deleteDiagram: deleteDiagram
+  }), tab === "builder" && /*#__PURE__*/React.createElement(BuilderTab, {
+    diagrams: diagrams,
+    saveDiagram: saveDiagram,
+    deleteDiagram: deleteDiagram,
+    flash: flash,
+    seed: seed,
+    clearSeed: () => setSeed(null)
+  }), tab === "library" && /*#__PURE__*/React.createElement(LibraryTab, {
+    cat: cat,
+    setCat: setCat,
+    addDrill: addDrill,
+    goPlanner: () => setTab("planner"),
+    dn: dn,
+    rename: rename
+  }), tab === "saved" && /*#__PURE__*/React.createElement(SavedTab, {
+    plans: plans,
+    loadPlan: p => {
+      setPlan(p);
+      setTab("planner");
+    },
+    newPlan: () => {
+      setPlan(blankPlan());
+      setTab("planner");
+    },
+    deletePlan: deletePlan,
+    loading: loading,
+    share: share,
+    dn: dn
+  }), tab === "laws" && /*#__PURE__*/React.createElement(LawsTab, null), shareText && /*#__PURE__*/React.createElement(ShareSheet, {
+    text: shareText,
+    onClose: () => setShareText(null),
+    onCopy: doCopy,
+    copied: copied
+  }), toast && /*#__PURE__*/React.createElement("div", {
+    style: S.toast
+  }, toast));
+}
+
+// ── STYLES ────────────────────────────────────────────────────
+const S = {
+  root: {
+    minHeight: "100vh",
+    background: C.black,
+    color: C.text,
+    fontFamily: '"Helvetica Neue", Arial, sans-serif'
+  },
+  header: {
+    background: C.black,
+    borderBottom: `3px solid ${C.gold}`,
+    padding: "14px 16px",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 14
+  },
+  mark: {
+    height: 46,
+    width: "auto",
+    display: "block"
+  },
+  values: {
+    background: C.maroon,
+    color: C.white,
+    fontSize: 10.5,
+    letterSpacing: 2.2,
+    textTransform: "uppercase",
+    padding: "6px 16px",
+    fontWeight: 700
+  },
+  eyebrow: {
+    fontSize: 10,
+    letterSpacing: 5,
+    color: C.white,
+    fontWeight: 700,
+    textTransform: "uppercase",
+    marginBottom: -1
+  },
+  wordmark: {
+    fontFamily: '"Haettenschweiler", "Arial Narrow", Impact, sans-serif',
+    fontSize: 34,
+    color: C.gold,
+    letterSpacing: 1.5,
+    fontStyle: "italic",
+    lineHeight: 0.92,
+    textTransform: "uppercase"
+  },
+  sub: {
+    fontSize: 10,
+    color: C.muted,
+    letterSpacing: 3,
+    marginTop: 7,
+    textTransform: "uppercase",
+    fontWeight: 700
+  },
+  navBtn: {
+    background: "transparent",
+    border: `1px solid ${C.line}`,
+    color: C.muted,
+    padding: "8px 13px",
+    borderRadius: 2,
+    cursor: "pointer",
+    fontSize: 11.5,
+    fontFamily: "inherit",
+    fontWeight: 700,
+    letterSpacing: 1.2,
+    textTransform: "uppercase"
+  },
+  navBtnOn: {
+    background: C.gold,
+    color: C.black,
+    border: `1px solid ${C.gold}`
+  },
+  cols: {
+    display: "flex",
+    gap: 14,
+    padding: 14,
+    alignItems: "flex-start",
+    flexWrap: "wrap"
+  },
+  colNarrow: {
+    flex: "1 1 270px",
+    minWidth: 250,
+    display: "flex",
+    flexDirection: "column",
+    gap: 14
+  },
+  colWide: {
+    flex: "2 1 340px",
+    minWidth: 280
+  },
+  card: {
+    background: C.panel,
+    border: `1px solid ${C.line}`,
+    borderRadius: 4,
+    padding: 16
+  },
+  cardHd: {
+    fontFamily: '"Haettenschweiler", "Arial Narrow", Impact, sans-serif',
+    fontSize: 21,
+    fontWeight: 400,
+    color: C.white,
+    marginBottom: 12,
+    letterSpacing: 1.2,
+    textTransform: "uppercase"
+  },
+  microHd: {
+    fontSize: 9.5,
+    color: C.gold,
+    fontWeight: 800,
+    textTransform: "uppercase",
+    letterSpacing: 1.6,
+    marginBottom: 5
+  },
+  datePill: {
+    fontSize: 11,
+    background: "#1a1713",
+    color: C.gold,
+    padding: "2px 8px",
+    borderRadius: 10,
+    marginLeft: 8
+  },
+  badge: {
+    fontSize: 10,
+    padding: "4px 11px",
+    borderRadius: 2,
+    background: C.maroon,
+    color: C.white,
+    fontWeight: 800,
+    letterSpacing: 1.4,
+    textTransform: "uppercase"
+  },
+  label: {
+    display: "block",
+    fontSize: 10,
+    color: C.muted,
+    marginBottom: 4,
+    marginTop: 12,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    fontWeight: 700
+  },
+  input: {
+    width: "100%",
+    background: C.panel2,
+    border: `1px solid ${C.line}`,
+    color: C.text,
+    borderRadius: 5,
+    padding: "9px 10px",
+    fontSize: 14,
+    boxSizing: "border-box",
+    fontFamily: "inherit"
+  },
+  typBtn: {
+    flex: 1,
+    padding: "8px 10px",
+    borderRadius: 5,
+    cursor: "pointer",
+    fontSize: 12.5,
+    fontWeight: 700,
+    fontFamily: "inherit"
+  },
+  timerBox: {
+    background: C.panel2,
+    border: `1px solid ${C.line}`,
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 14
+  },
+  pointsBox: {
+    background: C.maroon,
+    borderRadius: 4,
+    padding: "12px 14px",
+    marginBottom: 14
+  },
+  btnPrimary: {
+    background: C.gold,
+    color: C.black,
+    border: "none",
+    padding: "12px 16px",
+    borderRadius: 2,
+    cursor: "pointer",
+    fontWeight: 800,
+    fontSize: 12.5,
+    fontFamily: "inherit",
+    textAlign: "center",
+    letterSpacing: 1.4,
+    textTransform: "uppercase"
+  },
+  btnGhost: {
+    background: "transparent",
+    color: C.gold,
+    border: `1px solid ${C.goldDim}`,
+    padding: "11px 14px",
+    borderRadius: 2,
+    cursor: "pointer",
+    fontSize: 12,
+    fontFamily: "inherit",
+    fontWeight: 700,
+    letterSpacing: 1.1,
+    textTransform: "uppercase"
+  },
+  blockBtn: {
+    background: "#1a1713",
+    color: C.gold,
+    border: `1px solid ${C.goldDim}`,
+    padding: "8px 14px",
+    borderRadius: 20,
+    cursor: "pointer",
+    fontSize: 12.5,
+    fontFamily: "inherit",
+    fontWeight: 600
+  },
+  catBtn: {
+    padding: "5px 11px",
+    borderRadius: 20,
+    fontSize: 11.5,
+    background: C.panel2,
+    color: C.muted,
+    border: `1px solid ${C.line}`,
+    cursor: "pointer",
+    fontFamily: "inherit"
+  },
+  catBtnOn: {
+    background: C.gold,
+    color: C.black,
+    border: `1px solid ${C.gold}`,
+    fontWeight: 700
+  },
+  drillRow: {
+    display: "flex",
+    gap: 10,
+    background: C.panel2,
+    border: `1px solid ${C.line}`,
+    borderRadius: 8,
+    padding: 12,
+    alignItems: "flex-start"
+  },
+  drillNum: {
+    background: C.maroon,
+    color: C.white,
+    width: 26,
+    height: 26,
+    borderRadius: "50%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: 12,
+    fontWeight: 800,
+    flexShrink: 0
+  },
+  moveBtn: {
+    background: "transparent",
+    border: `1px solid ${C.line}`,
+    color: C.gold,
+    width: 26,
+    height: 22,
+    borderRadius: 4,
+    cursor: "pointer",
+    fontSize: 9,
+    padding: 0,
+    fontFamily: "inherit"
+  },
+  catPill: {
+    fontSize: 10,
+    color: C.muted,
+    background: C.black,
+    padding: "1px 6px",
+    borderRadius: 10
+  },
+  ptPill: {
+    fontSize: 11,
+    color: C.green,
+    background: "#0d1409",
+    padding: "2px 8px",
+    borderRadius: 10
+  },
+  tipPill: {
+    fontSize: 11.5,
+    color: C.goldL,
+    background: "#12100a",
+    borderLeft: `3px solid ${C.gold}`,
+    borderRadius: 2,
+    padding: "8px 11px",
+    marginTop: 8,
+    lineHeight: 1.65
+  },
+  durPill: {
+    background: "#1a1713",
+    color: C.gold,
+    fontSize: 11,
+    padding: "2px 7px",
+    borderRadius: 10,
+    fontWeight: 700
+  },
+  xBtn: {
+    background: "transparent",
+    border: `1px solid ${C.line}`,
+    color: C.grey,
+    width: 26,
+    height: 26,
+    borderRadius: "50%",
+    cursor: "pointer",
+    fontSize: 12,
+    fontFamily: "inherit"
+  },
+  pickCard: {
+    background: C.panel2,
+    border: `1px solid ${C.line}`,
+    borderRadius: 7,
+    padding: 11
+  },
+  empty: {
+    textAlign: "center",
+    padding: "34px 16px",
+    fontSize: 14
+  },
+  diagBtn: {
+    background: C.panel2,
+    border: `1px solid ${C.line}`,
+    color: C.muted,
+    padding: "8px 12px",
+    borderRadius: 5,
+    cursor: "pointer",
+    fontSize: 12.5,
+    fontFamily: "inherit",
+    fontWeight: 600
+  },
+  diagBtnOn: {
+    background: C.gold,
+    color: C.black,
+    border: `1px solid ${C.gold}`
+  },
+  diagCard: {
+    background: C.panel2,
+    border: `1px solid ${C.goldDim}`,
+    borderRadius: 10,
+    padding: 16
+  },
+  libCard: {
+    background: C.panel2,
+    border: `1px solid ${C.line}`,
+    borderRadius: 4,
+    padding: 14
+  },
+  lawTile: {
+    background: C.panel2,
+    border: `1px solid ${C.line}`,
+    borderRadius: 8,
+    padding: 12,
+    textAlign: "center"
+  },
+  overlay: {
+    position: "fixed",
+    inset: 0,
+    background: "rgba(0,0,0,0.75)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 16,
+    zIndex: 100
+  },
+  sheet: {
+    background: C.panel,
+    border: `1px solid ${C.gold}`,
+    borderRadius: 12,
+    padding: 18,
+    width: "100%",
+    maxWidth: 460,
+    maxHeight: "88vh",
+    overflowY: "auto"
+  },
+  shareBox: {
+    width: "100%",
+    height: 260,
+    background: C.panel2,
+    border: `1px solid ${C.line}`,
+    color: C.text,
+    borderRadius: 6,
+    padding: 12,
+    fontSize: 12.5,
+    fontFamily: "ui-monospace, Menlo, monospace",
+    boxSizing: "border-box",
+    resize: "vertical",
+    lineHeight: 1.55
+  },
+  toast: {
+    position: "fixed",
+    bottom: 20,
+    left: "50%",
+    transform: "translateX(-50%)",
+    background: C.gold,
+    color: C.black,
+    padding: "11px 20px",
+    borderRadius: 2,
+    fontSize: 12,
+    fontWeight: 800,
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+    zIndex: 120
+  }
+};
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
