@@ -3244,6 +3244,25 @@ function BuilderTab({
 }
 
 // ── APP ──────────────────────────────────────────────────────
+
+// Tries a few likely filenames so the logo works whatever you called it.
+var LOGO_FILES = [
+  "panthers-logo.png", "panthers-logo.jpg", "panthers-logo.jpeg",
+  "Panthers-Logo.png", "logo.png", "logo.jpg",
+  "panthers.png", "panthers.jpg", "Panmure_Panthers.jpg", "Panmure_Panthers.png"
+];
+
+function Logo() {
+  var _s = useState(0), i = _s[0], setI = _s[1];
+  if (i >= LOGO_FILES.length) return null;
+  return React.createElement("img", {
+    src: LOGO_FILES[i],
+    alt: "Panmure Panthers",
+    style: S.mark,
+    onError: function () { setI(i + 1); }
+  });
+}
+
 function App() {
   const [tab, setTab] = useState("block");
   const [plans, setPlans] = useState([]);
@@ -3391,7 +3410,7 @@ function App() {
       alignItems: "center",
       gap: 14
     }
-  }, /*#__PURE__*/React.createElement("img", { src: "panthers-logo.png", alt: "Panmure Panthers", style: S.mark, onError: function (e) { e.target.style.display = "none"; } }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Wordmark, null), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(Logo, null), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Wordmark, null), /*#__PURE__*/React.createElement("div", {
     style: S.sub
   }, "U10 · P5 Age Group"))), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -3495,7 +3514,7 @@ const S = {
     gap: 14
   },
   mark: {
-    height: 46,
+    height: 48,
     width: "auto",
     display: "block"
   },
