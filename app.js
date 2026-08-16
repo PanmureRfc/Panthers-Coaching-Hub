@@ -1721,9 +1721,17 @@ function PlannerTab(props) {
 }
 function VisualsTab({
   sel,
-  setSel
+  setSel,
+  custom
 }) {
-  const d = DIAGRAMS.find(x => x.id === sel) || DIAGRAMS[0];
+  const mine = (custom || []).filter(c => c.kind !== "setup" && !c.drillId);
+  const cd = mine.find(c => "c" + c.id === sel);
+  const d = cd ? {
+    id: "c" + cd.id,
+    label: cd.name,
+    icon: "✏️",
+    desc: "Drawn by a coach"
+  } : DIAGRAMS.find(x => x.id === sel) || DIAGRAMS[0];
   return /*#__PURE__*/React.createElement("div", {
     style: {
       padding: 14
@@ -1753,7 +1761,14 @@ function VisualsTab({
       ...S.diagBtn,
       ...(sel === x.id ? S.diagBtnOn : {})
     }
-  }, x.icon, " ", x.label))), /*#__PURE__*/React.createElement("div", {
+  }, x.icon, " ", x.label)), mine.map(x => /*#__PURE__*/React.createElement("button", {
+    key: x.id,
+    onClick: () => setSel("c" + x.id),
+    style: {
+      ...S.diagBtn,
+      ...(sel === "c" + x.id ? S.diagBtnOn : {})
+    }
+  }, "★ ", x.name))), /*#__PURE__*/React.createElement("div", {
     style: S.diagCard
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -1773,7 +1788,16 @@ function VisualsTab({
       maxWidth: 520,
       margin: "0 auto"
     }
-  }, /*#__PURE__*/React.createElement(PitchDiagram, {
+  }, cd ? /*#__PURE__*/React.createElement("svg", {
+    viewBox: "0 0 340 250",
+    style: {
+      width: "100%",
+      borderRadius: 4,
+      display: "block"
+    }
+  }, /*#__PURE__*/React.createElement(Markers, null), /*#__PURE__*/React.createElement(PitchBg, {
+    bg: cd.bg
+  }), cd.items.map(drawItem)) : /*#__PURE__*/React.createElement(PitchDiagram, {
     type: d.id
   })), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -1853,7 +1877,8 @@ function LibraryTab({
   addDrill,
   goPlanner,
   dn,
-  rename
+  rename,
+  custom
 }) {
   const [editing, setEditing] = useState(null);
   const [draft, setDraft] = useState("");
@@ -1970,7 +1995,23 @@ function LibraryTab({
     }
   }, "Originally: ", d.name), /*#__PURE__*/React.createElement(DrillBody, {
     d: d
-  }), /*#__PURE__*/React.createElement("button", {
+  }), (custom || []).filter(c => String(c.drillId) === String(d.id)).map(c => /*#__PURE__*/React.createElement("div", {
+    key: c.id,
+    style: {
+      marginTop: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: S.microHd
+  }, c.name), /*#__PURE__*/React.createElement("svg", {
+    viewBox: "0 0 340 250",
+    style: {
+      width: "100%",
+      borderRadius: 4,
+      display: "block"
+    }
+  }, /*#__PURE__*/React.createElement(Markers, null), /*#__PURE__*/React.createElement(PitchBg, {
+    bg: c.bg
+  }), c.items.map(drawItem)))), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       addDrill(d);
       goPlanner();
@@ -2715,6 +2756,7 @@ function BuilderTab({
   diagrams,
   saveDiagram,
   deleteDiagram,
+  updateDiagram,
   flash,
   seed,
   clearSeed
@@ -2726,12 +2768,14 @@ function BuilderTab({
   const [name, setName] = useState("");
   const [bg, setBg] = useState("pitch");
   const [kind, setKind] = useState("drill");
+  const [drillId, setDrillId] = useState("");
   useEffect(() => {
     if (!seed) return;
     setItems(seed.items || []);
     setName(seed.name || "");
     setBg(seed.bg || "pitch");
     setKind(seed.kind || "setup");
+    setDrillId(seed.drillId || "");
     clearSeed();
   }, [seed]);
   const VW = 340,
@@ -2827,15 +2871,17 @@ function BuilderTab({
       name: name.trim(),
       bg,
       items,
-      kind
+      kind,
+      drillId: kind === "drill" ? drillId : ""
     });
-    flash(kind === "setup" ? "Setup saved — it's in the Players tab" : "Drill saved for all coaches");
+    flash(kind === "setup" ? "Saved — it's in the Players tab" : drillId ? "Saved — it's on that drill" : "Saved — it's in the Visuals tab");
   };
   const load = d => {
     setItems(d.items);
     setBg(d.bg || "pitch");
     setName(d.name);
     setKind(d.kind || "drill");
+    setDrillId(d.drillId || "");
   };
   const FULL = 7,
     PX = 30,
@@ -3167,7 +3213,18 @@ function BuilderTab({
       marginTop: 6,
       lineHeight: 1.6
     }
-  }, kind === "setup" ? "Team setups appear in the Players tab." : "Drills stay here in the Draw tab."), /*#__PURE__*/React.createElement("div", {
+  }, kind === "setup" ? "Team setups appear in the Players tab." : "Drills stay here in the Draw tab."), kind === "drill" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    style: S.label
+  }, "Show it on which drill?"), /*#__PURE__*/React.createElement("select", {
+    value: drillId,
+    onChange: e => setDrillId(e.target.value),
+    style: S.input
+  }, /*#__PURE__*/React.createElement("option", {
+    value: ""
+  }, "Just a diagram (goes in Visuals)"), DRILLS.map(d => /*#__PURE__*/React.createElement("option", {
+    key: d.id,
+    value: d.id
+  }, d.name)))), /*#__PURE__*/React.createElement("div", {
     style: S.label
   }, "Name"), /*#__PURE__*/React.createElement("input", {
     value: name,
@@ -3215,15 +3272,16 @@ function BuilderTab({
   }, d.name), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
-      color: C.muted,
-      marginBottom: 6,
+      color: C.gold,
+      marginBottom: 7,
       textTransform: "uppercase",
       letterSpacing: 1
     }
-  }, d.kind === "setup" ? "Team setup" : "Drill"), /*#__PURE__*/React.createElement("div", {
+  }, d.kind === "setup" ? "→ Players tab" : d.drillId ? "→ " + (findDrill(Number(d.drillId)) || {}).name : "→ Visuals tab"), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
-      gap: 6
+      gap: 6,
+      flexWrap: "wrap"
     }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => load(d),
@@ -3233,6 +3291,16 @@ function BuilderTab({
       padding: "6px 10px"
     }
   }, "Open"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => updateDiagram(d.id, {
+      kind: d.kind === "setup" ? "drill" : "setup",
+      drillId: ""
+    }),
+    style: {
+      ...S.btnGhost,
+      fontSize: 11,
+      padding: "6px 10px"
+    }
+  }, d.kind === "setup" ? "Move to Visuals" : "Move to Players"), /*#__PURE__*/React.createElement("button", {
     onClick: () => deleteDiagram(d.id),
     style: {
       ...S.btnGhost,
@@ -3245,22 +3313,11 @@ function BuilderTab({
 
 // ── APP ──────────────────────────────────────────────────────
 
-// Tries a few likely filenames so the logo works whatever you called it.
-var LOGO_FILES = [
-  "panthers-logo.png", "panthers-logo.jpg", "panthers-logo.jpeg",
-  "Panthers-Logo.png", "logo.png", "logo.jpg",
-  "panthers.png", "panthers.jpg", "Panmure_Panthers.jpg", "Panmure_Panthers.png"
-];
-
+var LOGO_FILES = ["panthers-logo.png","panthers-logo.jpg","panthers-logo.jpeg","Panthers-Logo.png","logo.png","logo.jpg","panthers.png","panthers.jpg","Panmure_Panthers.jpg","Panmure_Panthers.png"];
 function Logo() {
   var _s = useState(0), i = _s[0], setI = _s[1];
   if (i >= LOGO_FILES.length) return null;
-  return React.createElement("img", {
-    src: LOGO_FILES[i],
-    alt: "Panmure Panthers",
-    style: S.mark,
-    onError: function () { setI(i + 1); }
-  });
+  return React.createElement("img", { src: LOGO_FILES[i], alt: "Panmure Panthers", style: S.mark, onError: function () { setI(i + 1); } });
 }
 
 function App() {
@@ -3373,6 +3430,10 @@ function App() {
     flash(custom ? "Renamed for all coaches" : "Name reset");
   };
   const deleteDiagram = id => persistDiagrams(diagrams.filter(d => d.id !== id));
+  const updateDiagram = (id, patch) => persistDiagrams(diagrams.map(d => d.id === id ? {
+    ...d,
+    ...patch
+  } : d));
   const loadBlock = b => {
     setPlan({
       id: Date.now(),
@@ -3449,7 +3510,8 @@ function App() {
     dn
   }), tab === "visuals" && /*#__PURE__*/React.createElement(VisualsTab, {
     sel: sel,
-    setSel: setSel
+    setSel: setSel,
+    custom: diagrams
   }), tab === "players" && /*#__PURE__*/React.createElement(PlayersTab, {
     sel: stand,
     setSel: setStand,
@@ -3461,6 +3523,7 @@ function App() {
     diagrams: diagrams,
     saveDiagram: saveDiagram,
     deleteDiagram: deleteDiagram,
+    updateDiagram: updateDiagram,
     flash: flash,
     seed: seed,
     clearSeed: () => setSeed(null)
@@ -3470,7 +3533,8 @@ function App() {
     addDrill: addDrill,
     goPlanner: () => setTab("planner"),
     dn: dn,
-    rename: rename
+    rename: rename,
+    custom: diagrams
   }), tab === "saved" && /*#__PURE__*/React.createElement(SavedTab, {
     plans: plans,
     loadPlan: p => {
