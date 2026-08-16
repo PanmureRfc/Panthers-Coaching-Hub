@@ -1036,8 +1036,12 @@ const DRILLS = [{
   points: ["Apply what we practised", "Everyone touches the ball", "Praise the attempt, name the skill"],
   tip: "Condition it to the session: only the first arriving player may touch the ball on the ground, or the carrier must have someone within 3m."
 }];
-const findDrill = id => DRILLS.find(d => d.id === id);
-const APP_VERSION = "v5";
+let ALL_DRILLS = DRILLS; // replaced at runtime with built-ins + custom
+const setAllDrills = list => {
+  ALL_DRILLS = list;
+};
+const findDrill = id => ALL_DRILLS.find(d => String(d.id) === String(id));
+const APP_VERSION = "v6";
 
 // ── BLOCK 1 ──────────────────────────────────────────────────
 const BLOCK = [{
@@ -1154,13 +1158,20 @@ function DrillBody({
   custom
 }) {
   const mine = (custom || []).filter(c => String(c.drillId) === String(d.id));
+  const own = d.items && d.items.length ? [{
+    id: "own" + d.id,
+    name: "",
+    bg: d.bg,
+    items: d.items
+  }] : [];
+  const pics = own.concat(mine);
   return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: C.muted,
       margin: "4px 0 8px"
     }
-  }, d.cat, " · ", d.players, " · ", d.equip), mine.map(c => /*#__PURE__*/React.createElement("div", {
+  }, d.cat, " · ", d.players, " · ", d.equip), pics.map(c => /*#__PURE__*/React.createElement("div", {
     key: c.id,
     style: {
       margin: "0 0 10px"
@@ -1381,7 +1392,7 @@ function PlannerTab(props) {
   const info = SESSION_TYPES[plan.type];
   const total = plan.drills.reduce((s, d) => s + d.dur, 0);
   const left = info.duration - total;
-  const list = cat === "All" ? DRILLS : DRILLS.filter(d => d.cat === cat);
+  const list = cat === "All" ? ALL_DRILLS : ALL_DRILLS.filter(d => d.cat === cat);
   return /*#__PURE__*/React.createElement("div", {
     style: S.cols
   }, /*#__PURE__*/React.createElement("div", {
@@ -1993,11 +2004,13 @@ function LibraryTab({
   goPlanner,
   dn,
   rename,
-  custom
+  custom,
+  drills,
+  deleteDrill
 }) {
   const [editing, setEditing] = useState(null);
   const [draft, setDraft] = useState("");
-  const list = cat === "All" ? DRILLS : DRILLS.filter(d => d.cat === cat);
+  const list = cat === "All" ? drills : drills.filter(d => d.cat === cat);
   const start = d => {
     setEditing(d.id);
     setDraft(dn(d));
@@ -2108,7 +2121,23 @@ function LibraryTab({
       color: C.muted,
       marginTop: 5
     }
-  }, "Originally: ", d.name), /*#__PURE__*/React.createElement(DrillBody, {
+  }, "Originally: ", d.name), d.mine && editing !== d.id && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
+    style: {
+      ...S.badge,
+      marginLeft: 6,
+      fontSize: 9
+    }
+  }, "Ours"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => deleteDrill(d.id),
+    style: {
+      ...S.btnGhost,
+      fontSize: 10.5,
+      padding: "5px 10px",
+      marginTop: 6,
+      marginLeft: 6,
+      color: C.redL
+    }
+  }, "Delete drill")), /*#__PURE__*/React.createElement(DrillBody, {
     d: d,
     custom: custom
   }), /*#__PURE__*/React.createElement("button", {
@@ -2855,6 +2884,7 @@ const TOOLS = [{
 function BuilderTab({
   diagrams,
   saveDiagram,
+  saveDrill,
   deleteDiagram,
   updateDiagram,
   flash,
@@ -2867,8 +2897,22 @@ function BuilderTab({
   const [labelText, setLabelText] = useState("");
   const [name, setName] = useState("");
   const [bg, setBg] = useState("pitch");
-  const [kind, setKind] = useState("drill");
+  const [kind, setKind] = useState("newdrill");
   const [drillId, setDrillId] = useState("");
+  const [meta, setMeta] = useState({
+    cat: "Handling",
+    dur: 12,
+    equip: "",
+    desc: "",
+    p1: "",
+    p2: "",
+    p3: "",
+    tip: ""
+  });
+  const setM = (k, v) => setMeta(m => ({
+    ...m,
+    [k]: v
+  }));
   useEffect(() => {
     if (!seed) return;
     setItems(seed.items || []);
@@ -2966,6 +3010,24 @@ function BuilderTab({
   const doSave = () => {
     if (!name.trim()) return flash("Give it a name first");
     if (!items.length) return flash("Nothing on the pitch yet");
+    if (kind === "newdrill") {
+      if (!meta.desc.trim()) return flash("Add a line on how it runs, so another coach can pick it up");
+      saveDrill({
+        id: Date.now(),
+        name: name.trim(),
+        cat: meta.cat,
+        dur: Number(meta.dur) || 12,
+        players: "",
+        equip: meta.equip.trim() || "Cones",
+        desc: meta.desc.trim(),
+        points: [meta.p1, meta.p2, meta.p3].filter(x => x.trim()),
+        tip: meta.tip.trim(),
+        bg,
+        items,
+        mine: true
+      });
+      return flash("Drill added — it's in the Drills tab");
+    }
     saveDiagram({
       id: Date.now(),
       name: name.trim(),
@@ -3297,11 +3359,12 @@ function BuilderTab({
       display: "flex",
       gap: 6
     }
-  }, [["drill", "A drill"], ["setup", "Team setup"]].map(([k, l]) => /*#__PURE__*/React.createElement("button", {
+  }, [["newdrill", "New drill"], ["drill", "Add to a drill"], ["setup", "Team setup"]].map(([k, l]) => /*#__PURE__*/React.createElement("button", {
     key: k,
     onClick: () => setKind(k),
     style: {
       ...S.typBtn,
+      fontSize: 11.5,
       background: kind === k ? C.gold : C.panel2,
       color: kind === k ? "#000" : C.muted,
       border: `2px solid ${kind === k ? C.gold : C.line}`
@@ -3313,15 +3376,15 @@ function BuilderTab({
       marginTop: 6,
       lineHeight: 1.6
     }
-  }, kind === "setup" ? "Team setups appear in the Players tab." : "Drills stay here in the Draw tab."), kind === "drill" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+  }, kind === "setup" ? "Team setups appear in the Players tab." : kind === "newdrill" ? "Makes a brand new drill you can add to sessions." : "Adds this picture to one of the existing drills."), kind === "drill" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: S.label
-  }, "Show it on which drill?"), /*#__PURE__*/React.createElement("select", {
+  }, "Which drill?"), /*#__PURE__*/React.createElement("select", {
     value: drillId,
     onChange: e => setDrillId(e.target.value),
     style: S.input
   }, /*#__PURE__*/React.createElement("option", {
     value: ""
-  }, "Just a diagram (goes in Visuals)"), DRILLS.map(d => /*#__PURE__*/React.createElement("option", {
+  }, "Just a diagram (goes in Visuals)"), ALL_DRILLS.map(d => /*#__PURE__*/React.createElement("option", {
     key: d.id,
     value: d.id
   }, d.name)))), /*#__PURE__*/React.createElement("div", {
@@ -3329,9 +3392,63 @@ function BuilderTab({
   }, "Name"), /*#__PURE__*/React.createElement("input", {
     value: name,
     onChange: e => setName(e.target.value),
-    placeholder: kind === "setup" ? "e.g. Defending a free pass" : "e.g. 4 Corners",
+    placeholder: kind === "setup" ? "e.g. Defending a free pass" : "e.g. Bulldog",
     style: S.input
-  }), /*#__PURE__*/React.createElement("button", {
+  }), kind === "newdrill" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    style: S.label
+  }, "Type"), /*#__PURE__*/React.createElement("select", {
+    value: meta.cat,
+    onChange: e => setM("cat", e.target.value),
+    style: S.input
+  }, ["Warm-Up", "Handling", "Tackle", "Game"].map(c => /*#__PURE__*/React.createElement("option", {
+    key: c,
+    value: c
+  }, c))), /*#__PURE__*/React.createElement("div", {
+    style: S.label
+  }, "Minutes"), /*#__PURE__*/React.createElement("input", {
+    type: "number",
+    min: "3",
+    max: "40",
+    value: meta.dur,
+    onChange: e => setM("dur", e.target.value),
+    style: S.input
+  }), /*#__PURE__*/React.createElement("div", {
+    style: S.label
+  }, "Kit needed"), /*#__PURE__*/React.createElement("input", {
+    value: meta.equip,
+    onChange: e => setM("equip", e.target.value),
+    placeholder: "Cones, bibs, 2 balls",
+    style: S.input
+  }), /*#__PURE__*/React.createElement("div", {
+    style: S.label
+  }, "How it runs"), /*#__PURE__*/React.createElement("textarea", {
+    value: meta.desc,
+    onChange: e => setM("desc", e.target.value),
+    placeholder: "A couple of sentences so another coach can run it cold.",
+    style: {
+      ...S.input,
+      height: 70,
+      resize: "vertical"
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: S.label
+  }, "What to say (three coaching points)"), ["p1", "p2", "p3"].map((k, i) => /*#__PURE__*/React.createElement("input", {
+    key: k,
+    value: meta[k],
+    onChange: e => setM(k, e.target.value),
+    placeholder: i + 1 + ".",
+    style: {
+      ...S.input,
+      marginBottom: 5
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: S.label
+  }, "Coach's tip (optional)"), /*#__PURE__*/React.createElement("input", {
+    value: meta.tip,
+    onChange: e => setM("tip", e.target.value),
+    placeholder: "Anything that makes it work better",
+    style: S.input
+  })), /*#__PURE__*/React.createElement("button", {
     onClick: doSave,
     style: {
       ...S.btnPrimary,
@@ -3431,6 +3548,7 @@ function App() {
   const [names, setNames] = useState({});
   const [seed, setSeed] = useState(null);
   const [hidden, setHidden] = useState([]);
+  const [myDrills, setMyDrills] = useState([]);
   const [toast, setToast] = useState("");
   const [diagrams, setDiagrams] = useState([]);
   const [shareText, setShareText] = useState(null);
@@ -3452,6 +3570,10 @@ function App() {
       try {
         const h = await window.storage.get("panthers-hidden", true);
         if (h?.value) setHidden(JSON.parse(h.value));
+      } catch {/* none yet */}
+      try {
+        const md = await window.storage.get("panthers-my-drills", true);
+        if (md?.value) setMyDrills(JSON.parse(md.value));
       } catch {/* none yet */}
       setLoading(false);
     })();
@@ -3522,6 +3644,16 @@ function App() {
     });
     setTab("builder");
   };
+  const persistDrills = async next => {
+    setMyDrills(next);
+    try {
+      await window.storage.set("panthers-my-drills", JSON.stringify(next), true);
+    } catch {
+      flash("Saved on this device only");
+    }
+  };
+  const saveDrill = d => persistDrills([...myDrills.filter(x => x.name !== d.name), d]);
+  const deleteDrill = id => persistDrills(myDrills.filter(d => d.id !== id));
   const editSetup = d => {
     setSeed({
       ...d,
@@ -3538,6 +3670,8 @@ function App() {
     });
     setTab("builder");
   };
+  const allDrills = [...DRILLS, ...myDrills];
+  setAllDrills(allDrills);
   const dn = d => d ? names[d.id] || d.name : "";
   const rename = async (id, custom) => {
     const next = {
@@ -3657,6 +3791,7 @@ function App() {
   }), tab === "builder" && /*#__PURE__*/React.createElement(BuilderTab, {
     diagrams: diagrams,
     saveDiagram: saveDiagram,
+    saveDrill: saveDrill,
     deleteDiagram: deleteDiagram,
     updateDiagram: updateDiagram,
     flash: flash,
@@ -3669,7 +3804,9 @@ function App() {
     goPlanner: () => setTab("planner"),
     dn: dn,
     rename: rename,
-    custom: diagrams
+    custom: diagrams,
+    drills: allDrills,
+    deleteDrill: deleteDrill
   }), tab === "saved" && /*#__PURE__*/React.createElement(SavedTab, {
     plans: plans,
     loadPlan: p => {
