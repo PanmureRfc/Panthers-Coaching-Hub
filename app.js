@@ -1037,7 +1037,7 @@ const DRILLS = [{
   tip: "Condition it to the session: only the first arriving player may touch the ball on the ground, or the carrier must have someone within 3m."
 }];
 const findDrill = id => DRILLS.find(d => d.id === id);
-const APP_VERSION = "v4";
+const APP_VERSION = "v5";
 
 // ── BLOCK 1 ──────────────────────────────────────────────────
 const BLOCK = [{
@@ -1150,15 +1150,38 @@ function Card({
   }, title), children);
 }
 function DrillBody({
-  d
+  d,
+  custom
 }) {
+  const mine = (custom || []).filter(c => String(c.drillId) === String(d.id));
   return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: C.muted,
       margin: "4px 0 8px"
     }
-  }, d.cat, " · ", d.players, " · ", d.equip), /*#__PURE__*/React.createElement("div", {
+  }, d.cat, " · ", d.players, " · ", d.equip), mine.map(c => /*#__PURE__*/React.createElement("div", {
+    key: c.id,
+    style: {
+      margin: "0 0 10px"
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    viewBox: "0 0 340 250",
+    style: {
+      width: "100%",
+      borderRadius: 4,
+      display: "block"
+    }
+  }, /*#__PURE__*/React.createElement(Markers, null), /*#__PURE__*/React.createElement(PitchBg, {
+    bg: c.bg
+  }), c.items.map(drawItem)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: C.muted,
+      textAlign: "center",
+      marginTop: 3
+    }
+  }, c.name))), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 13,
       color: C.tan,
@@ -1352,7 +1375,8 @@ function PlannerTab(props) {
     move,
     loadBlock,
     openShare,
-    dn
+    dn,
+    custom
   } = props;
   const info = SESSION_TYPES[plan.type];
   const total = plan.drills.reduce((s, d) => s + d.dur, 0);
@@ -1638,7 +1662,8 @@ function PlannerTab(props) {
   }), /*#__PURE__*/React.createElement("span", {
     style: S.catPill
   }, d.cat)), /*#__PURE__*/React.createElement(DrillBody, {
-    d: d
+    d: d,
+    custom: custom
   })), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
@@ -1723,9 +1748,16 @@ function PlannerTab(props) {
 function VisualsTab({
   sel,
   setSel,
-  custom
+  custom,
+  hidden,
+  hide,
+  unhide,
+  drawOwn,
+  deleteDiagram
 }) {
   const mine = (custom || []).filter(c => c.kind !== "setup" && !c.drillId);
+  const visible = DIAGRAMS.filter(x => !(hidden || []).includes(x.id));
+  const hiddenOnes = DIAGRAMS.filter(x => (hidden || []).includes(x.id));
   const cd = mine.find(c => "c" + c.id === sel);
   const d = cd ? {
     id: "c" + cd.id,
@@ -1755,7 +1787,7 @@ function VisualsTab({
       flexWrap: "wrap",
       marginBottom: 16
     }
-  }, DIAGRAMS.map(x => /*#__PURE__*/React.createElement("button", {
+  }, visible.map(x => /*#__PURE__*/React.createElement("button", {
     key: x.id,
     onClick: () => setSel(x.id),
     style: {
@@ -1773,18 +1805,76 @@ function VisualsTab({
     style: S.diagCard
   }, /*#__PURE__*/React.createElement("div", {
     style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      gap: 10,
+      flexWrap: "wrap",
+      marginBottom: 6
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
       fontWeight: "bold",
       color: C.gold,
-      fontSize: 16,
-      marginBottom: 4
+      fontSize: 16
     }
   }, d.icon, " ", d.label), /*#__PURE__*/React.createElement("div", {
     style: {
       color: C.muted,
       fontSize: 13,
-      marginBottom: 14
+      marginTop: 3
     }
-  }, d.desc), /*#__PURE__*/React.createElement("div", {
+  }, d.desc)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      flexWrap: "wrap"
+    }
+  }, cd ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
+    onClick: () => drawOwn({
+      ...cd
+    }),
+    style: {
+      ...S.btnGhost,
+      fontSize: 11,
+      padding: "6px 10px"
+    }
+  }, "Edit"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      deleteDiagram(cd.id);
+      setSel(DIAGRAMS[0].id);
+    },
+    style: {
+      ...S.btnGhost,
+      fontSize: 11,
+      padding: "6px 10px",
+      color: C.redL
+    }
+  }, "Delete")) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
+    onClick: () => drawOwn({
+      name: d.label,
+      bg: "pitch",
+      items: [],
+      kind: "drill",
+      drillId: ""
+    }),
+    style: {
+      ...S.btnGhost,
+      fontSize: 11,
+      padding: "6px 10px"
+    }
+  }, "Draw my own"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      hide(d.id);
+      setSel(DIAGRAMS.find(x => x.id !== d.id).id);
+    },
+    style: {
+      ...S.btnGhost,
+      fontSize: 11,
+      padding: "6px 10px",
+      color: C.redL
+    }
+  }, "Hide this")))), /*#__PURE__*/React.createElement("div", {
     style: {
       maxWidth: 520,
       margin: "0 auto"
@@ -1836,7 +1926,31 @@ function VisualsTab({
       background: C.red,
       marginRight: 4
     }
-  }), "Defenders")))), /*#__PURE__*/React.createElement(Card, {
+  }), "Defenders")))), hiddenOnes.length > 0 && /*#__PURE__*/React.createElement(Card, {
+    title: "Hidden",
+    style: {
+      marginBottom: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12.5,
+      color: C.muted,
+      marginBottom: 10
+    }
+  }, "These are switched off. Bring one back if you want it."), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      flexWrap: "wrap"
+    }
+  }, hiddenOnes.map(x => /*#__PURE__*/React.createElement("button", {
+    key: x.id,
+    onClick: () => unhide(x.id),
+    style: {
+      ...S.diagBtn,
+      opacity: 0.7
+    }
+  }, x.label, " — restore")))), /*#__PURE__*/React.createElement(Card, {
     title: "All diagrams"
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -1845,7 +1959,7 @@ function VisualsTab({
       gap: 14,
       marginTop: 8
     }
-  }, DIAGRAMS.map(x => /*#__PURE__*/React.createElement("div", {
+  }, visible.map(x => /*#__PURE__*/React.createElement("div", {
     key: x.id,
     style: {
       background: C.panel2,
@@ -1995,24 +2109,9 @@ function LibraryTab({
       marginTop: 5
     }
   }, "Originally: ", d.name), /*#__PURE__*/React.createElement(DrillBody, {
-    d: d
-  }), (custom || []).filter(c => String(c.drillId) === String(d.id)).map(c => /*#__PURE__*/React.createElement("div", {
-    key: c.id,
-    style: {
-      marginTop: 10
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: S.microHd
-  }, c.name), /*#__PURE__*/React.createElement("svg", {
-    viewBox: "0 0 340 250",
-    style: {
-      width: "100%",
-      borderRadius: 4,
-      display: "block"
-    }
-  }, /*#__PURE__*/React.createElement(Markers, null), /*#__PURE__*/React.createElement(PitchBg, {
-    bg: c.bg
-  }), c.items.map(drawItem)))), /*#__PURE__*/React.createElement("button", {
+    d: d,
+    custom: custom
+  }), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       addDrill(d);
       goPlanner();
@@ -3331,6 +3430,7 @@ function App() {
   const [stand, setStand] = useState("defend");
   const [names, setNames] = useState({});
   const [seed, setSeed] = useState(null);
+  const [hidden, setHidden] = useState([]);
   const [toast, setToast] = useState("");
   const [diagrams, setDiagrams] = useState([]);
   const [shareText, setShareText] = useState(null);
@@ -3348,6 +3448,10 @@ function App() {
       try {
         const n = await window.storage.get("panthers-drill-names", true);
         if (n?.value) setNames(JSON.parse(n.value));
+      } catch {/* none yet */}
+      try {
+        const h = await window.storage.get("panthers-hidden", true);
+        if (h?.value) setHidden(JSON.parse(h.value));
       } catch {/* none yet */}
       setLoading(false);
     })();
@@ -3400,6 +3504,24 @@ function App() {
     }
   };
   const saveDiagram = d => persistDiagrams([...diagrams.filter(x => x.name !== d.name || x.kind !== d.kind), d]);
+  const persistHidden = async next => {
+    setHidden(next);
+    try {
+      await window.storage.set("panthers-hidden", JSON.stringify(next), true);
+    } catch {/* offline */}
+  };
+  const hide = id => {
+    persistHidden([...hidden, id]);
+    flash("Hidden — restore it at the bottom of this tab");
+  };
+  const unhide = id => persistHidden(hidden.filter(x => x !== id));
+  const drawOwn = d => {
+    setSeed({
+      ...d,
+      kind: "drill"
+    });
+    setTab("builder");
+  };
   const editSetup = d => {
     setSeed({
       ...d,
@@ -3514,11 +3636,17 @@ function App() {
     move,
     loadBlock,
     openShare: () => share(plan),
-    dn
+    dn,
+    custom: diagrams
   }), tab === "visuals" && /*#__PURE__*/React.createElement(VisualsTab, {
     sel: sel,
     setSel: setSel,
-    custom: diagrams
+    custom: diagrams,
+    hidden: hidden,
+    hide: hide,
+    unhide: unhide,
+    drawOwn: drawOwn,
+    deleteDiagram: deleteDiagram
   }), tab === "players" && /*#__PURE__*/React.createElement(PlayersTab, {
     sel: stand,
     setSel: setStand,
