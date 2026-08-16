@@ -1,11 +1,10 @@
-/* Fill these in to share sessions and diagrams between all coaches.
-   Leave them empty and the app still works, but each coach only sees
-   what they saved on their own device.
+/* Panthers Coaching Hub — Supabase connection.
+   These two values are safe in a public repo. The publishable key can only
+   do what the table rules in supabase-setup.sql allow.
 
-   Both values are safe to put in a public repo — the anon key is designed
-   to be public, and the table rules below decide what it can actually do. */
+   Never put the secret key (sb_secret_...) in here. */
 
 window.PANTHERS_CONFIG = {
-  supabaseUrl: "",   // e.g. https://abcdefgh.supabase.co
-  supabaseKey: ""    // Project Settings > API > anon public key
+  supabaseUrl: "https://liliojaorjmuprrowoam.supabase.co",
+  supabaseKey: "sb_publishable_G7Wp8GbMxpSDHSlB4Hsnzw_6S4VaWbb"
 };
