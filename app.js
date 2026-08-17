@@ -1335,7 +1335,7 @@ const setAllDrills = list => {
   ALL_DRILLS = list;
 };
 const findDrill = id => ALL_DRILLS.find(d => String(d.id) === String(id));
-const APP_VERSION = "v14";
+const APP_VERSION = "v15";
 
 // ── BLOCK 1 ──────────────────────────────────────────────────
 const BLOCKS = {
@@ -1503,7 +1503,8 @@ function DrillBody({
     }
   }, /*#__PURE__*/React.createElement(Markers, null), /*#__PURE__*/React.createElement(PitchBg, {
     bg: c.bg,
-    age: c.age
+    age: c.age,
+    view: c.view
   }), c.items.map(drawItem)), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
@@ -2298,7 +2299,8 @@ function VisualsTab({
     }
   }, /*#__PURE__*/React.createElement(Markers, null), /*#__PURE__*/React.createElement(PitchBg, {
     bg: cd.bg,
-    age: age
+    age: age,
+    view: cd.view
   }), cd.items.map(drawItem)) : /*#__PURE__*/React.createElement(PitchDiagram, {
     type: d.id
   })), /*#__PURE__*/React.createElement("div", {
@@ -2989,6 +2991,8 @@ function drawItem(it) {
       return disc(IC.D, "D", "#fff");
     case "num":
       return disc(IC.num, String(it.n), "#000");
+    case "numD":
+      return disc(IC.D, String(it.n), "#fff");
     case "nine":
       return disc(IC.A, "9", "#000");
     case "cone":
@@ -3020,6 +3024,25 @@ function drawItem(it) {
         strokeWidth: 2.6,
         markerEnd: "url(#bag)"
       });
+    case "arc":
+      {
+        const mx = (it.x + it.x2) / 2,
+          my = (it.y + it.y2) / 2;
+        const dx = it.x2 - it.x,
+          dy = it.y2 - it.y;
+        const len = Math.max(1, Math.hypot(dx, dy));
+        const bow = Math.min(46, len * 0.45);
+        const cx = mx - dy / len * bow,
+          cy = my + dx / len * bow;
+        return /*#__PURE__*/React.createElement("path", {
+          key: it.id,
+          d: `M${it.x},${it.y} Q${cx},${cy} ${it.x2},${it.y2}`,
+          fill: "none",
+          stroke: IC.run,
+          strokeWidth: 2.6,
+          markerEnd: "url(#bag)"
+        });
+      }
     case "pass":
       return /*#__PURE__*/React.createElement("line", {
         key: it.id,
@@ -3071,25 +3094,50 @@ const PITCHES = {
     label: "Full pitch"
   }
 };
-function pitchBox(age) {
+const VIEWS = [{
+  id: "full",
+  label: "Full pitch"
+}, {
+  id: "def",
+  label: "Our third"
+}, {
+  id: "mid",
+  label: "Middle third"
+}, {
+  id: "att",
+  label: "Their third"
+}];
+function pitchBox(age, view = "full") {
   const p = PITCHES[age] || PITCHES.u10;
   const maxW = 280,
     maxH = 210;
-  const scale = Math.min(maxW / p.long, maxH / p.wide);
+  const zoom = view && view !== "full" ? 3 : 1;
+  const scale = Math.min(maxW / p.long, maxH / p.wide) * zoom;
   const w = p.long * scale,
     h = p.wide * scale;
+  const y = 12 + (maxH - Math.min(h, maxH)) / 2;
+  // slide the pitch so the chosen third fills the canvas
+  const shift = {
+    def: 0,
+    mid: 1,
+    att: 2
+  }[view] || 0;
+  const x = zoom === 1 ? (340 - w) / 2 : 30 - shift * (w / 3);
   return {
     ...p,
     scale,
     w,
     h,
-    x: (340 - w) / 2,
-    y: 12 + (maxH - h) / 2
+    x,
+    y,
+    zoom,
+    view: view || "full"
   };
 }
 function PitchBg({
   bg,
-  age
+  age,
+  view
 }) {
   if (bg !== "pitch") return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
     x: 22,
@@ -3115,8 +3163,9 @@ function PitchBg({
     y2: y,
     stroke: "rgba(252,252,252,0.09)"
   })));
-  const P = pitchBox(age);
+  const P = pitchBox(age, view);
   const ig = P.ingoal * P.scale;
+  const clip = "pclip-" + (view || "full");
   const white = "rgba(252,252,252,0.55)";
   const faint = "rgba(252,252,252,0.3)";
 
@@ -3189,7 +3238,24 @@ function PitchBg({
       })));
     }
   });
-  return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
+  return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("defs", null, /*#__PURE__*/React.createElement("clipPath", {
+    id: clip
+  }, /*#__PURE__*/React.createElement("rect", {
+    x: 28,
+    y: 10,
+    width: 284,
+    height: 214,
+    rx: 2
+  }))), /*#__PURE__*/React.createElement("rect", {
+    x: 28,
+    y: 10,
+    width: 284,
+    height: 214,
+    fill: "#0e3315",
+    rx: 2
+  }), /*#__PURE__*/React.createElement("g", {
+    clipPath: `url(#${clip})`
+  }, /*#__PURE__*/React.createElement("rect", {
     x: P.x,
     y: P.y,
     width: P.w,
@@ -3247,13 +3313,22 @@ function PitchBg({
     y2: P.y + P.h / 2 + 5.6 * P.scale,
     stroke: "#FCFCFC",
     strokeWidth: 2.2
-  }))), /*#__PURE__*/React.createElement("text", {
+  })))), /*#__PURE__*/React.createElement("rect", {
+    x: 28,
+    y: 10,
+    width: 284,
+    height: 214,
+    fill: "none",
+    stroke: "rgba(252,252,252,0.35)",
+    strokeWidth: 1,
+    rx: 2
+  }), /*#__PURE__*/React.createElement("text", {
     x: 340 / 2,
-    y: P.y - 4,
+    y: 7,
     textAnchor: "middle",
     fill: C.tan,
     fontSize: 8
-  }, P.label, " · we attack right"));
+  }, P.label, P.zoom > 1 ? " · " + (VIEWS.find(v => v.id === P.view) || {}).label : "", " · we attack right"));
 }
 function Markers() {
   return /*#__PURE__*/React.createElement("defs", null, /*#__PURE__*/React.createElement("marker", {
@@ -3331,6 +3406,20 @@ function PlayersTab({
     builtin: null,
     custom: d
   }))];
+  const groups = [];
+  setups.forEach(d => {
+    const g = d.platform || "Other";
+    let row = groups.find(x => x.name === g);
+    if (!row) {
+      row = {
+        name: g,
+        items: []
+      };
+      groups.push(row);
+    }
+    row.items.push(d);
+  });
+  groups.sort((a, b) => a.name === "Other" ? 1 : b.name === "Other" ? -1 : a.name.localeCompare(b.name));
   const cur = all.find(x => x.key === sel) || all[0] || null;
   const st = cur ? cur.builtin : null;
   const cd = cur ? cur.custom : null;
@@ -3364,27 +3453,59 @@ function PlayersTab({
       marginBottom: 14,
       lineHeight: 1.6
     }
-  }, "Hold this up and show them. The four built-in ones are a starting point — edit any of them, or add your own."), /*#__PURE__*/React.createElement("div", {
+  }, "Hold this up and show them. The four built-in ones are a starting point — edit any of them, or add your own."), age === "u10" && /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 8,
       flexWrap: "wrap",
-      marginBottom: 16
+      marginBottom: 12
     }
-  }, all.map(x => /*#__PURE__*/React.createElement("button", {
+  }, all.filter(x => x.builtin).map(x => /*#__PURE__*/React.createElement("button", {
     key: x.key,
     onClick: () => setSel(x.key),
     style: {
       ...S.diagBtn,
       ...(sel === x.key ? S.diagBtnOn : {})
     }
-  }, x.custom ? "★ " : "", x.label)), /*#__PURE__*/React.createElement("button", {
+  }, x.label))), groups.map(g => /*#__PURE__*/React.createElement("div", {
+    key: g.name,
+    style: {
+      marginBottom: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      ...S.microHd,
+      marginBottom: 6
+    }
+  }, g.name), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      flexWrap: "wrap"
+    }
+  }, g.items.map(d => /*#__PURE__*/React.createElement("button", {
+    key: d.id,
+    onClick: () => setSel("c" + d.id),
+    style: {
+      ...S.diagBtn,
+      ...(sel === "c" + d.id ? S.diagBtnOn : {})
+    }
+  }, "★ ", d.name, d.zone ? /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: C.muted,
+      fontWeight: 400
+    }
+  }, " · ", d.zone) : null))))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 16
+    }
+  }, /*#__PURE__*/React.createElement("button", {
     onClick: newSetup,
     style: {
       ...S.diagBtn,
       borderStyle: "dashed"
     }
-  }, "+ New setup")), !cur ? /*#__PURE__*/React.createElement("div", {
+  }, "+ New play or setup")), !cur ? /*#__PURE__*/React.createElement("div", {
     style: S.empty
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -3409,13 +3530,21 @@ function PlayersTab({
       flexWrap: "wrap",
       marginBottom: 10
     }
-  }, /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontWeight: 700,
       color: C.gold,
       fontSize: 15
     }
-  }, cur.label), /*#__PURE__*/React.createElement("div", {
+  }, cur.label), cd && (cd.platform || cd.zone) && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10.5,
+      color: C.muted,
+      marginTop: 3,
+      textTransform: "uppercase",
+      letterSpacing: 1
+    }
+  }, [cd.platform, cd.zone].filter(Boolean).join(" · "))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 6
@@ -3453,7 +3582,8 @@ function PlayersTab({
     }
   }, /*#__PURE__*/React.createElement(Markers, null), /*#__PURE__*/React.createElement(PitchBg, {
     bg: cd ? cd.bg : "pitch",
-    age: age
+    age: age,
+    view: cd ? cd.view : "full"
   }), cd ? cd.items.map(drawItem) : /*#__PURE__*/React.createElement(React.Fragment, null, (st.lines || []).map(([x1, y1, x2, y2], i) => /*#__PURE__*/React.createElement("line", {
     key: i,
     x1: x1,
@@ -3538,6 +3668,46 @@ const IC = {
   // pass — blue
   text: "#F5F0E6" // label — off white
 };
+// Set piece shapes, correct numbers for each age group.
+// Offsets are in canvas units from where the coach taps.
+const FORMATIONS = {
+  scrumAttack: {
+    label: "Scrum — ours",
+    ages: {
+      u12: 5,
+      u14: 8
+    },
+    shape: n => {
+      const front = [["1", -18, -14], ["2", 0, -16], ["3", 18, -14]];
+      const second = [["4", -9, 4], ["5", 9, 4]];
+      const back = [["6", -26, 10], ["7", 26, 10], ["8", 0, 22]];
+      const rows = n >= 8 ? front.concat(second, back) : front.concat(second);
+      return rows.concat([["9", -34, 26]]);
+    }
+  },
+  scrumDefend: {
+    label: "Scrum — theirs",
+    ages: {
+      u12: 5,
+      u14: 8
+    },
+    shape: n => {
+      const front = [["1", -18, 14], ["2", 0, 16], ["3", 18, 14]];
+      const second = [["4", -9, -4], ["5", 9, -4]];
+      const back = [["6", -26, -10], ["7", 26, -10], ["8", 0, -22]];
+      const rows = n >= 8 ? front.concat(second, back) : front.concat(second);
+      return rows.concat([["9", 34, -26]]);
+    }
+  },
+  lineout: {
+    label: "Lineout — ours",
+    ages: {
+      u12: 5,
+      u14: 5
+    },
+    shape: () => [["2", -34, 0], ["1", 0, 0], ["3", 22, 0], ["4", 44, 0], ["5", 66, 0], ["9", 52, 26]]
+  }
+};
 const TOOLS = [{
   k: "A",
   label: "Attacker",
@@ -3565,6 +3735,10 @@ const TOOLS = [{
 }, {
   k: "run",
   label: "Run →",
+  c: IC.run
+}, {
+  k: "arc",
+  label: "Arc ↷",
   c: IC.run
 }, {
   k: "pass",
@@ -3597,6 +3771,9 @@ function BuilderTab({
   const [name, setName] = useState("");
   const [bg, setBg] = useState("pitch");
   const [kind, setKind] = useState("newdrill");
+  const [view, setView] = useState("full");
+  const [platform, setPlatform] = useState("");
+  const [zone, setZone] = useState("");
   const [drillId, setDrillId] = useState("");
   const [meta, setMeta] = useState({
     cat: "Handling",
@@ -3618,6 +3795,9 @@ function BuilderTab({
     setName(seed.name || "");
     setBg(seed.bg || "pitch");
     setKind(seed.kind || "setup");
+    setView(seed.view || "full");
+    setPlatform(seed.platform || "");
+    setZone(seed.zone || "");
     setDrillId(seed.drillId || "");
     clearSeed();
   }, [seed]);
@@ -3650,7 +3830,7 @@ function BuilderTab({
       if (best !== null) setItems(a => a.filter(it => it.id !== best));
       return;
     }
-    if (tool === "run" || tool === "pass") {
+    if (tool === "run" || tool === "pass" || tool === "arc") {
       if (!pending) {
         setPending({
           x,
@@ -3667,6 +3847,20 @@ function BuilderTab({
         y2: y
       }]);
       setPending(null);
+      return;
+    }
+    if (tool.startsWith("form:")) {
+      const key = tool.slice(5);
+      const f = FORMATIONS[key];
+      const n = f.ages[age] || 5;
+      const stamp = f.shape(n).map(([label, dx, dy], i) => ({
+        id: Date.now() + i,
+        type: key === "scrumDefend" ? "numD" : "num",
+        x: x + dx,
+        y: y + dy,
+        n: label
+      }));
+      setItems(a => [...a, ...stamp]);
       return;
     }
     if (tool === "text") {
@@ -3736,6 +3930,9 @@ function BuilderTab({
       items,
       kind,
       age,
+      view,
+      platform,
+      zone,
       drillId: kind === "drill" ? drillId : ""
     });
     flash(kind === "setup" ? "Saved — it's in the Players tab" : drillId ? "Saved — it's on that drill" : "Saved — it's in the Visuals tab");
@@ -3746,6 +3943,9 @@ function BuilderTab({
     setName(d.name);
     setKind(d.kind || "drill");
     setDrillId(d.drillId || "");
+    setView(d.view || "full");
+    setPlatform(d.platform || "");
+    setZone(d.zone || "");
   };
   const FULL = 7,
     PX = 30,
@@ -3777,6 +3977,8 @@ function BuilderTab({
         return disc(it, IC.D, "D", "#fff");
       case "num":
         return disc(it, IC.num, String(it.n), "#000");
+      case "numD":
+        return disc(it, IC.D, String(it.n), "#fff");
       case "nine":
         return disc(it, IC.A, "9", "#000");
       case "cone":
@@ -3808,6 +4010,25 @@ function BuilderTab({
           strokeWidth: 2.6,
           markerEnd: "url(#bag)"
         });
+      case "arc":
+        {
+          const mx = (it.x + it.x2) / 2,
+            my = (it.y + it.y2) / 2;
+          const dx = it.x2 - it.x,
+            dy = it.y2 - it.y;
+          const len = Math.max(1, Math.hypot(dx, dy));
+          const bow = Math.min(46, len * 0.45);
+          const cx = mx - dy / len * bow,
+            cy = my + dx / len * bow;
+          return /*#__PURE__*/React.createElement("path", {
+            key: it.id,
+            d: `M${it.x},${it.y} Q${cx},${cy} ${it.x2},${it.y2}`,
+            fill: "none",
+            stroke: IC.run,
+            strokeWidth: 2.6,
+            markerEnd: "url(#bag)"
+          });
+        }
       case "pass":
         return /*#__PURE__*/React.createElement("line", {
           key: it.id,
@@ -3888,13 +4109,60 @@ function BuilderTab({
       ...S.input,
       marginBottom: 10
     }
-  }), /*#__PURE__*/React.createElement("div", {
+  }), bg === "pitch" && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      flexWrap: "wrap",
+      marginBottom: 10
+    }
+  }, VIEWS.map(v => /*#__PURE__*/React.createElement("button", {
+    key: v.id,
+    onClick: () => setView(v.id),
+    style: {
+      ...S.catBtn,
+      padding: "6px 11px",
+      background: view === v.id ? C.maroon : C.panel2,
+      color: view === v.id ? C.white : C.muted,
+      border: `1px solid ${view === v.id ? C.maroon : C.line}`
+    }
+  }, v.label))), Object.entries(FORMATIONS).filter(([, f]) => f.ages[age]).length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      flexWrap: "wrap",
+      marginBottom: 10,
+      alignItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10,
+      color: C.muted,
+      textTransform: "uppercase",
+      letterSpacing: 1,
+      fontWeight: 700
+    }
+  }, "Drop in a set piece"), Object.entries(FORMATIONS).filter(([, f]) => f.ages[age]).map(([k, f]) => /*#__PURE__*/React.createElement("button", {
+    key: k,
+    onClick: () => {
+      setTool("form:" + k);
+      setPending(null);
+    },
+    style: {
+      ...S.catBtn,
+      padding: "6px 11px",
+      background: tool === "form:" + k ? C.gold : C.panel2,
+      color: tool === "form:" + k ? "#000" : C.text,
+      border: `1px solid ${tool === "form:" + k ? C.gold : C.line}`,
+      fontWeight: 700
+    }
+  }, f.label, " (", f.ages[age], ")"))), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11.5,
       color: pending ? C.gold : C.muted,
       marginBottom: 8
     }
-  }, tool === "erase" ? "Tap anything to remove it." : tool === "run" || tool === "pass" ? pending ? "Now tap where it ends." : "Tap where it starts, then where it ends." : tool === "text" ? "Type a label above, then tap the pitch." : "Tap the pitch to place."), /*#__PURE__*/React.createElement("svg", {
+  }, tool.startsWith("form:") ? "Tap the pitch to drop the whole set piece in, numbered." : tool === "erase" ? "Tap anything to remove it." : tool === "arc" ? pending ? "Now tap where the run finishes." : "Tap where the run starts, then where it finishes. It bows to one side — tap the ends the other way round to bow it the other way." : tool === "run" || tool === "pass" ? pending ? "Now tap where it ends." : "Tap where it starts, then where it ends." : tool === "text" ? "Type a label above, then tap the pitch." : "Tap the pitch to place."), /*#__PURE__*/React.createElement("svg", {
     viewBox: `0 0 ${VW} ${VH}`,
     onClick: tap,
     style: {
@@ -3926,7 +4194,8 @@ function BuilderTab({
     fill: IC.pass
   }))), /*#__PURE__*/React.createElement(PitchBg, {
     bg: bg,
-    age: age
+    age: age,
+    view: view
   }), items.map(draw), pending && /*#__PURE__*/React.createElement("circle", {
     cx: pending.x,
     cy: pending.y,
@@ -4016,12 +4285,34 @@ function BuilderTab({
   }, "Just a diagram (goes in Visuals)"), ALL_DRILLS.map(d => /*#__PURE__*/React.createElement("option", {
     key: d.id,
     value: d.id
-  }, d.name)))), /*#__PURE__*/React.createElement("div", {
+  }, d.name)))), kind === "setup" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    style: S.label
+  }, "Starts from"), /*#__PURE__*/React.createElement("select", {
+    value: platform,
+    onChange: e => setPlatform(e.target.value),
+    style: S.input
+  }, /*#__PURE__*/React.createElement("option", {
+    value: ""
+  }, "Not from a set piece"), ["Scrum", "Lineout", "Kick off", "Restart", "Penalty", "Free kick", "Open play"].map(x => /*#__PURE__*/React.createElement("option", {
+    key: x,
+    value: x
+  }, x))), /*#__PURE__*/React.createElement("div", {
+    style: S.label
+  }, "Where on the pitch"), /*#__PURE__*/React.createElement("select", {
+    value: zone,
+    onChange: e => setZone(e.target.value),
+    style: S.input
+  }, /*#__PURE__*/React.createElement("option", {
+    value: ""
+  }, "Anywhere"), ["Our third", "Middle third", "Their third"].map(x => /*#__PURE__*/React.createElement("option", {
+    key: x,
+    value: x
+  }, x)))), /*#__PURE__*/React.createElement("div", {
     style: S.label
   }, "Name"), /*#__PURE__*/React.createElement("input", {
     value: name,
     onChange: e => setName(e.target.value),
-    placeholder: kind === "setup" ? "e.g. Defending a free pass" : "e.g. Bulldog",
+    placeholder: kind === "setup" ? "e.g. Lineout strike, their 22" : "e.g. Bulldog",
     style: S.input
   }), kind === "newdrill" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: S.label
