@@ -1335,7 +1335,7 @@ const setAllDrills = list => {
   ALL_DRILLS = list;
 };
 const findDrill = id => ALL_DRILLS.find(d => String(d.id) === String(id));
-const APP_VERSION = "v13";
+const APP_VERSION = "v14";
 
 // ── BLOCK 1 ──────────────────────────────────────────────────
 const BLOCKS = {
@@ -3117,13 +3117,85 @@ function PitchBg({
   })));
   const P = pitchBox(age);
   const ig = P.ingoal * P.scale;
+  const white = "rgba(252,252,252,0.55)";
+  const faint = "rgba(252,252,252,0.3)";
+
+  // x runs along the length, y across the width
+  const alongFromTry = m => P.x + ig + m * P.scale; // m from the near try line
+  const alongFromFarTry = m => P.x + P.w - ig - m * P.scale;
+  const acrossFromTouch = m => P.y + m * P.scale;
+  const acrossFromFarTouch = m => P.y + P.h - m * P.scale;
+  const playLong = P.long - 2 * P.ingoal; // try line to try line
+  const mid = P.x + P.w / 2;
+  const cross = [];
+  // 22m lines — only on a pitch long enough to have them
+  if (playLong >= 60) {
+    [alongFromTry(22), alongFromFarTry(22)].forEach((x, i) => cross.push(/*#__PURE__*/React.createElement("line", {
+      key: "22-" + i,
+      x1: x,
+      y1: P.y,
+      x2: x,
+      y2: P.y + P.h,
+      stroke: white,
+      strokeWidth: 1.1
+    })));
+    [alongFromTry(playLong / 2 - 10), alongFromTry(playLong / 2 + 10)].forEach((x, i) => cross.push(/*#__PURE__*/React.createElement("line", {
+      key: "10-" + i,
+      x1: x,
+      y1: P.y,
+      x2: x,
+      y2: P.y + P.h,
+      stroke: faint,
+      strokeWidth: 1,
+      strokeDasharray: "7,6"
+    })));
+    [alongFromTry(5), alongFromFarTry(5)].forEach((x, i) => cross.push(/*#__PURE__*/React.createElement("line", {
+      key: "5-" + i,
+      x1: x,
+      y1: P.y,
+      x2: x,
+      y2: P.y + P.h,
+      stroke: faint,
+      strokeWidth: 1,
+      strokeDasharray: "4,5"
+    })));
+  } else {
+    // mini pitches: the two dashed cross lines SRU show on their diagrams
+    [alongFromTry(playLong / 4), alongFromFarTry(playLong / 4)].forEach((x, i) => cross.push(/*#__PURE__*/React.createElement("line", {
+      key: "q-" + i,
+      x1: x,
+      y1: P.y,
+      x2: x,
+      y2: P.y + P.h,
+      stroke: faint,
+      strokeWidth: 1,
+      strokeDasharray: "6,5"
+    })));
+  }
+
+  // lengthwise 5m and 15m lines in from each touchline
+  const lanes = [];
+  [5, 15].forEach(m => {
+    if (P.wide > m * 2 + 6) {
+      [acrossFromTouch(m), acrossFromFarTouch(m)].forEach((y, i) => lanes.push(/*#__PURE__*/React.createElement("line", {
+        key: `l${m}-${i}`,
+        x1: P.x + ig,
+        y1: y,
+        x2: P.x + P.w - ig,
+        y2: y,
+        stroke: faint,
+        strokeWidth: 1,
+        strokeDasharray: "5,7"
+      })));
+    }
+  });
   return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
     x: P.x,
     y: P.y,
     width: P.w,
     height: P.h,
     fill: "#123d1a",
-    rx: 3
+    rx: 2
   }), /*#__PURE__*/React.createElement("rect", {
     x: P.x,
     y: P.y,
@@ -3136,35 +3208,46 @@ function PitchBg({
     width: ig,
     height: P.h,
     fill: "#0e3315"
+  }), lanes, cross, /*#__PURE__*/React.createElement("line", {
+    x1: mid,
+    y1: P.y,
+    x2: mid,
+    y2: P.y + P.h,
+    stroke: "rgba(252,252,252,0.7)",
+    strokeWidth: 1.3
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: P.x + ig,
+    y1: P.y,
+    x2: P.x + ig,
+    y2: P.y + P.h,
+    stroke: "rgba(252,252,252,0.9)",
+    strokeWidth: 1.4
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: P.x + P.w - ig,
+    y1: P.y,
+    x2: P.x + P.w - ig,
+    y2: P.y + P.h,
+    stroke: "rgba(252,252,252,0.9)",
+    strokeWidth: 1.4
   }), /*#__PURE__*/React.createElement("rect", {
     x: P.x,
     y: P.y,
     width: P.w,
     height: P.h,
     fill: "none",
-    stroke: "rgba(252,252,252,0.8)",
+    stroke: "rgba(252,252,252,0.85)",
     strokeWidth: 1.4,
-    rx: 3
-  }), /*#__PURE__*/React.createElement("line", {
-    x1: P.x + ig,
-    y1: P.y,
-    x2: P.x + ig,
-    y2: P.y + P.h,
-    stroke: "rgba(252,252,252,0.5)"
-  }), /*#__PURE__*/React.createElement("line", {
-    x1: P.x + P.w - ig,
-    y1: P.y,
-    x2: P.x + P.w - ig,
-    y2: P.y + P.h,
-    stroke: "rgba(252,252,252,0.5)"
-  }), /*#__PURE__*/React.createElement("line", {
-    x1: P.x + P.w / 2,
-    y1: P.y,
-    x2: P.x + P.w / 2,
-    y2: P.y + P.h,
-    stroke: "rgba(252,252,252,0.22)",
-    strokeDasharray: "4,4"
-  }), /*#__PURE__*/React.createElement("text", {
+    rx: 2
+  }), [P.x + ig, P.x + P.w - ig].map((x, i) => /*#__PURE__*/React.createElement("g", {
+    key: "p" + i
+  }, /*#__PURE__*/React.createElement("line", {
+    x1: x,
+    y1: P.y + P.h / 2 - 5.6 * P.scale,
+    x2: x,
+    y2: P.y + P.h / 2 + 5.6 * P.scale,
+    stroke: "#FCFCFC",
+    strokeWidth: 2.2
+  }))), /*#__PURE__*/React.createElement("text", {
     x: 340 / 2,
     y: P.y - 4,
     textAnchor: "middle",
@@ -3249,8 +3332,8 @@ function PlayersTab({
     custom: d
   }))];
   const cur = all.find(x => x.key === sel) || all[0] || null;
-  const st = cur.builtin;
-  const cd = cur.custom;
+  const st = cur ? cur.builtin : null;
+  const cd = cur ? cur.custom : null;
   const dot = (x, y, l, ours) => /*#__PURE__*/React.createElement("g", {
     key: `${x}-${y}-${l}-${ours}`
   }, /*#__PURE__*/React.createElement("circle", {
@@ -3273,7 +3356,7 @@ function PlayersTab({
       padding: 14
     }
   }, /*#__PURE__*/React.createElement(Card, {
-    title: "Where they stand"
+    title: "Plays — where they stand"
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       color: C.muted,
@@ -4612,7 +4695,7 @@ function App() {
       flexWrap: "wrap",
       justifyContent: "flex-end"
     }
-  }, [["block", "Sessions"], ["planner", "Planner"], ["visuals", "Visuals"], ["players", "Players"], ["builder", "Draw"], ["library", "Drills"], ["saved", "Saved"], ["laws", "Laws"], ["blueprint", "Blueprint"]].map(([k, l]) => /*#__PURE__*/React.createElement("button", {
+  }, [["block", "Sessions"], ["planner", "Planner"], ["visuals", "Visuals"], ["players", "Plays"], ["builder", "Draw"], ["library", "Drills"], ["saved", "Saved"], ["laws", "Laws"], ["blueprint", "Blueprint"]].map(([k, l]) => /*#__PURE__*/React.createElement("button", {
     key: k,
     onClick: () => setTab(k),
     style: {
