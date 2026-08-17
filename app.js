@@ -1335,7 +1335,7 @@ const setAllDrills = list => {
   ALL_DRILLS = list;
 };
 const findDrill = id => ALL_DRILLS.find(d => String(d.id) === String(id));
-const APP_VERSION = "v16";
+const APP_VERSION = "v17";
 
 // ── BLOCK 1 ──────────────────────────────────────────────────
 const BLOCKS = {
@@ -1505,7 +1505,7 @@ function DrillBody({
     bg: c.bg,
     age: c.age,
     view: c.view
-  }), c.items.map(drawItem)), /*#__PURE__*/React.createElement("div", {
+  }), c.items.map(it => drawItem(it, discR(c.age, c.view, c.bg)))), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
       color: C.muted,
@@ -2301,7 +2301,7 @@ function VisualsTab({
     bg: cd.bg,
     age: age,
     view: cd.view
-  }), cd.items.map(drawItem)) : /*#__PURE__*/React.createElement(PitchDiagram, {
+  }), cd.items.map(it => drawItem(it, discR(age, cd.view, cd.bg)))) : /*#__PURE__*/React.createElement(PitchDiagram, {
     type: d.id
   })), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -2966,22 +2966,22 @@ const STANDS = [{
 }];
 
 // Shared item renderer — used by the builder and by saved team setups
-function drawItem(it) {
+function drawItem(it, R = 10) {
   const disc = (fill, label, txtCol) => /*#__PURE__*/React.createElement("g", {
     key: it.id
   }, /*#__PURE__*/React.createElement("circle", {
     cx: it.x,
     cy: it.y,
-    r: 10,
+    r: R,
     fill: fill,
     stroke: "rgba(0,0,0,0.55)",
-    strokeWidth: 1.6
+    strokeWidth: R > 7 ? 1.6 : 1.1
   }), /*#__PURE__*/React.createElement("text", {
     x: it.x,
-    y: it.y + 4,
+    y: it.y + R * 0.36,
     textAnchor: "middle",
     fill: txtCol,
-    fontSize: 10,
+    fontSize: R * 1.02,
     fontWeight: "bold"
   }, label));
   switch (it.type) {
@@ -2998,7 +2998,7 @@ function drawItem(it) {
     case "cone":
       return /*#__PURE__*/React.createElement("polygon", {
         key: it.id,
-        points: `${it.x},${it.y - 9} ${it.x - 7},${it.y + 5} ${it.x + 7},${it.y + 5}`,
+        points: `${it.x},${it.y - R * 0.9} ${it.x - R * 0.7},${it.y + R * 0.5} ${it.x + R * 0.7},${it.y + R * 0.5}`,
         fill: IC.cone,
         stroke: "rgba(0,0,0,0.5)"
       });
@@ -3007,11 +3007,11 @@ function drawItem(it) {
         key: it.id,
         cx: it.x,
         cy: it.y,
-        rx: 7,
-        ry: 4.5,
+        rx: R * 0.7,
+        ry: R * 0.45,
         fill: IC.ball,
         stroke: "#000",
-        strokeWidth: 1.2
+        strokeWidth: 1.1
       });
     case "run":
       return /*#__PURE__*/React.createElement("line", {
@@ -3110,32 +3110,58 @@ const VIEWS = [{
   id: "att",
   label: "Their third"
 }];
+
+// Geometry for a pitch view. Full pitch is landscape (we attack right).
+// A third is portrait (we attack up), because a third of a pitch is taller
+// than it is wide — that's the only way it genuinely zooms.
 function pitchBox(age, view = "full") {
   const p = PITCHES[age] || PITCHES.u10;
-  const maxW = 280,
-    maxH = 210;
-  const zoom = view && view !== "full" ? 3 : 1;
-  const scale = Math.min(maxW / p.long, maxH / p.wide) * zoom;
-  const w = p.long * scale,
-    h = p.wide * scale;
-  const y = 12 + (maxH - Math.min(h, maxH)) / 2;
-  // slide the pitch so the chosen third fills the canvas
-  const shift = {
+  const W = 284,
+    H = 214,
+    X0 = 28,
+    Y0 = 10;
+  const portrait = view && view !== "full";
+  const shownLong = portrait ? p.long / 3 : p.long;
+  const scale = portrait ? Math.min(W / p.wide, H / shownLong) : Math.min(W / p.long, H / p.wide);
+  const boxW = portrait ? p.wide * scale : p.long * scale;
+  const boxH = portrait ? shownLong * scale : p.wide * scale;
+  const x = X0 + (W - boxW) / 2;
+  const y = Y0 + (H - boxH) / 2;
+  const offset = {
     def: 0,
     mid: 1,
     att: 2
   }[view] || 0;
-  const x = zoom === 1 ? (340 - w) / 2 : 30 - shift * (w / 3);
+  const startLong = portrait ? offset * (p.long / 3) : 0;
+
+  // along = metres from our dead ball line, across = metres from one touchline
+  const at = (along, across) => portrait ? {
+    x: x + across * scale,
+    y: y + boxH - (along - startLong) * scale
+  } : {
+    x: x + (along - startLong) * scale,
+    y: y + across * scale
+  };
   return {
     ...p,
     scale,
-    w,
-    h,
+    portrait,
     x,
     y,
-    zoom,
+    w: boxW,
+    h: boxH,
+    at,
+    startLong,
+    shownLong,
     view: view || "full"
   };
+}
+
+// A player is about a metre across; keep them readable but not cartoonish.
+function discR(age, view, bg) {
+  if (bg !== "pitch") return 10;
+  const P = pitchBox(age, view);
+  return Math.max(5, Math.min(11, P.scale * 1.5));
 }
 function PitchBg({
   bg,
@@ -3167,79 +3193,66 @@ function PitchBg({
     stroke: "rgba(252,252,252,0.09)"
   })));
   const P = pitchBox(age, view);
-  const ig = P.ingoal * P.scale;
-  const clip = "pclip-" + (view || "full");
-  const white = "rgba(252,252,252,0.55)";
-  const faint = "rgba(252,252,252,0.3)";
+  const clip = "pc-" + (view || "full");
+  const faint = "rgba(252,252,252,0.32)";
+  const white = "rgba(252,252,252,0.6)";
+  const bright = "rgba(252,252,252,0.92)";
+  const seg = (a1, c1, a2, c2, stroke, w, dash, key) => {
+    const p1 = P.at(a1, c1),
+      p2 = P.at(a2, c2);
+    return /*#__PURE__*/React.createElement("line", {
+      key: key,
+      x1: p1.x,
+      y1: p1.y,
+      x2: p2.x,
+      y2: p2.y,
+      stroke: stroke,
+      strokeWidth: w,
+      strokeDasharray: dash
+    });
+  };
+  const L = P.long,
+    Wd = P.wide,
+    ig = P.ingoal;
+  const playLong = L - 2 * ig;
+  const lines = [];
 
-  // x runs along the length, y across the width
-  const alongFromTry = m => P.x + ig + m * P.scale; // m from the near try line
-  const alongFromFarTry = m => P.x + P.w - ig - m * P.scale;
-  const acrossFromTouch = m => P.y + m * P.scale;
-  const acrossFromFarTouch = m => P.y + P.h - m * P.scale;
-  const playLong = P.long - 2 * P.ingoal; // try line to try line
-  const mid = P.x + P.w / 2;
-  const cross = [];
-  // 22m lines — only on a pitch long enough to have them
+  // try lines and halfway
+  lines.push(seg(ig, 0, ig, Wd, bright, 1.4, undefined, "try1"));
+  lines.push(seg(L - ig, 0, L - ig, Wd, bright, 1.4, undefined, "try2"));
+  lines.push(seg(L / 2, 0, L / 2, Wd, white, 1.3, undefined, "half"));
   if (playLong >= 60) {
-    [alongFromTry(22), alongFromFarTry(22)].forEach((x, i) => cross.push(/*#__PURE__*/React.createElement("line", {
-      key: "22-" + i,
-      x1: x,
-      y1: P.y,
-      x2: x,
-      y2: P.y + P.h,
-      stroke: white,
-      strokeWidth: 1.1
-    })));
-    [alongFromTry(playLong / 2 - 10), alongFromTry(playLong / 2 + 10)].forEach((x, i) => cross.push(/*#__PURE__*/React.createElement("line", {
-      key: "10-" + i,
-      x1: x,
-      y1: P.y,
-      x2: x,
-      y2: P.y + P.h,
-      stroke: faint,
-      strokeWidth: 1,
-      strokeDasharray: "7,6"
-    })));
-    [alongFromTry(5), alongFromFarTry(5)].forEach((x, i) => cross.push(/*#__PURE__*/React.createElement("line", {
-      key: "5-" + i,
-      x1: x,
-      y1: P.y,
-      x2: x,
-      y2: P.y + P.h,
-      stroke: faint,
-      strokeWidth: 1,
-      strokeDasharray: "4,5"
-    })));
+    [22, playLong - 22].forEach((m, i) => lines.push(seg(ig + m, 0, ig + m, Wd, white, 1.1, undefined, "t22-" + i)));
+    [playLong / 2 - 10, playLong / 2 + 10].forEach((m, i) => lines.push(seg(ig + m, 0, ig + m, Wd, faint, 1, "7,6", "t10-" + i)));
+    [5, playLong - 5].forEach((m, i) => lines.push(seg(ig + m, 0, ig + m, Wd, faint, 1, "4,5", "t5-" + i)));
   } else {
-    // mini pitches: the two dashed cross lines SRU show on their diagrams
-    [alongFromTry(playLong / 4), alongFromFarTry(playLong / 4)].forEach((x, i) => cross.push(/*#__PURE__*/React.createElement("line", {
-      key: "q-" + i,
-      x1: x,
-      y1: P.y,
-      x2: x,
-      y2: P.y + P.h,
-      stroke: faint,
-      strokeWidth: 1,
-      strokeDasharray: "6,5"
-    })));
+    [playLong / 4, playLong * 3 / 4].forEach((m, i) => lines.push(seg(ig + m, 0, ig + m, Wd, faint, 1, "6,5", "q-" + i)));
   }
-
-  // lengthwise 5m and 15m lines in from each touchline
-  const lanes = [];
   [5, 15].forEach(m => {
-    if (P.wide > m * 2 + 6) {
-      [acrossFromTouch(m), acrossFromFarTouch(m)].forEach((y, i) => lanes.push(/*#__PURE__*/React.createElement("line", {
-        key: `l${m}-${i}`,
-        x1: P.x + ig,
-        y1: y,
-        x2: P.x + P.w - ig,
-        y2: y,
-        stroke: faint,
-        strokeWidth: 1,
-        strokeDasharray: "5,7"
-      })));
+    if (Wd > m * 2 + 6) {
+      [m, Wd - m].forEach((c, i) => lines.push(seg(ig, c, L - ig, c, faint, 1, "5,7", `l${m}-${i}`)));
     }
+  });
+  const corner = (a, c) => P.at(a, c);
+  const c1 = corner(0, 0),
+    c2 = corner(L, 0),
+    c3 = corner(L, Wd),
+    c4 = corner(0, Wd);
+  const igA = [corner(0, 0), corner(ig, 0), corner(ig, Wd), corner(0, Wd)];
+  const igB = [corner(L - ig, 0), corner(L, 0), corner(L, Wd), corner(L - ig, Wd)];
+  const poly = pts => pts.map(p => `${p.x},${p.y}`).join(" ");
+  const posts = [ig, L - ig].map((a, i) => {
+    const p1 = P.at(a, Wd / 2 - 2.8),
+      p2 = P.at(a, Wd / 2 + 2.8);
+    return /*#__PURE__*/React.createElement("line", {
+      key: "post" + i,
+      x1: p1.x,
+      y1: p1.y,
+      x2: p2.x,
+      y2: p2.y,
+      stroke: "#FCFCFC",
+      strokeWidth: 2.4
+    });
   });
   return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("defs", null, /*#__PURE__*/React.createElement("clipPath", {
     id: clip
@@ -3254,84 +3267,40 @@ function PitchBg({
     y: 10,
     width: 284,
     height: 214,
-    fill: "#0e3315",
+    fill: "#0d2c14",
     rx: 2
   }), /*#__PURE__*/React.createElement("g", {
     clipPath: `url(#${clip})`
-  }, /*#__PURE__*/React.createElement("rect", {
-    x: P.x,
-    y: P.y,
-    width: P.w,
-    height: P.h,
-    fill: "#123d1a",
-    rx: 2
-  }), /*#__PURE__*/React.createElement("rect", {
-    x: P.x,
-    y: P.y,
-    width: ig,
-    height: P.h,
+  }, /*#__PURE__*/React.createElement("polygon", {
+    points: poly([c1, c2, c3, c4]),
+    fill: "#123d1a"
+  }), /*#__PURE__*/React.createElement("polygon", {
+    points: poly(igA),
     fill: "#0e3315"
-  }), /*#__PURE__*/React.createElement("rect", {
-    x: P.x + P.w - ig,
-    y: P.y,
-    width: ig,
-    height: P.h,
+  }), /*#__PURE__*/React.createElement("polygon", {
+    points: poly(igB),
     fill: "#0e3315"
-  }), lanes, cross, /*#__PURE__*/React.createElement("line", {
-    x1: mid,
-    y1: P.y,
-    x2: mid,
-    y2: P.y + P.h,
-    stroke: "rgba(252,252,252,0.7)",
-    strokeWidth: 1.3
-  }), /*#__PURE__*/React.createElement("line", {
-    x1: P.x + ig,
-    y1: P.y,
-    x2: P.x + ig,
-    y2: P.y + P.h,
-    stroke: "rgba(252,252,252,0.9)",
-    strokeWidth: 1.4
-  }), /*#__PURE__*/React.createElement("line", {
-    x1: P.x + P.w - ig,
-    y1: P.y,
-    x2: P.x + P.w - ig,
-    y2: P.y + P.h,
-    stroke: "rgba(252,252,252,0.9)",
-    strokeWidth: 1.4
-  }), /*#__PURE__*/React.createElement("rect", {
-    x: P.x,
-    y: P.y,
-    width: P.w,
-    height: P.h,
+  }), lines, posts, /*#__PURE__*/React.createElement("polygon", {
+    points: poly([c1, c2, c3, c4]),
     fill: "none",
-    stroke: "rgba(252,252,252,0.85)",
-    strokeWidth: 1.4,
-    rx: 2
-  }), [P.x + ig, P.x + P.w - ig].map((x, i) => /*#__PURE__*/React.createElement("g", {
-    key: "p" + i
-  }, /*#__PURE__*/React.createElement("line", {
-    x1: x,
-    y1: P.y + P.h / 2 - 5.6 * P.scale,
-    x2: x,
-    y2: P.y + P.h / 2 + 5.6 * P.scale,
-    stroke: "#FCFCFC",
-    strokeWidth: 2.2
-  })))), /*#__PURE__*/React.createElement("rect", {
+    stroke: bright,
+    strokeWidth: 1.4
+  })), /*#__PURE__*/React.createElement("rect", {
     x: 28,
     y: 10,
     width: 284,
     height: 214,
     fill: "none",
-    stroke: "rgba(252,252,252,0.35)",
+    stroke: "rgba(252,252,252,0.3)",
     strokeWidth: 1,
     rx: 2
   }), /*#__PURE__*/React.createElement("text", {
-    x: 340 / 2,
+    x: 170,
     y: 7,
     textAnchor: "middle",
     fill: C.tan,
     fontSize: 8
-  }, P.label, P.zoom > 1 ? " · " + (VIEWS.find(v => v.id === P.view) || {}).label : "", " · we attack right"));
+  }, P.label, P.portrait ? " · " + (VIEWS.find(v => v.id === P.view) || {}).label + " · we attack up" : " · we attack right"));
 }
 function Markers() {
   return /*#__PURE__*/React.createElement("defs", null, /*#__PURE__*/React.createElement("marker", {
@@ -3587,7 +3556,7 @@ function PlayersTab({
     bg: cd ? cd.bg : "pitch",
     age: age,
     view: cd ? cd.view : "full"
-  }), cd ? cd.items.map(drawItem) : /*#__PURE__*/React.createElement(React.Fragment, null, (st.lines || []).map(([x1, y1, x2, y2], i) => /*#__PURE__*/React.createElement("line", {
+  }), cd ? cd.items.map(it => drawItem(it, discR(age, cd.view, cd.bg))) : /*#__PURE__*/React.createElement(React.Fragment, null, (st.lines || []).map(([x1, y1, x2, y2], i) => /*#__PURE__*/React.createElement("line", {
     key: i,
     x1: x1,
     y1: y1,
@@ -3676,50 +3645,56 @@ const IC = {
 // Set piece shapes, correct numbers for each age group.
 // Pitch is drawn attacking right, so a scrum's axis runs left-right
 // and a lineout runs down from the touchline into the field.
+// Set pieces in metres: [label, along, across]
+// along = towards the opposition line, across = towards the far touchline.
+// They're transformed to match whichever view is on screen.
 const FORMATIONS = {
   scrumAttack: {
     label: "Scrum — ours",
+    kind: "scrum",
     ages: {
       u12: 5,
       u14: 8
     },
     shape: n => {
-      // front row on the right of our pack, pushing towards their line
-      const rows = [["1", 0, -15], ["2", 0, 0], ["3", 0, 15], ["4", -20, -8], ["5", -20, 8]];
-      if (n >= 8) rows.push(["6", -17, -28], ["7", -17, 28], ["8", -38, 0]);
-      rows.push(["9", n >= 8 ? -50 : -34, 26]);
-      return rows;
+      const r = [["1", 0, -0.9], ["2", 0, 0], ["3", 0, 0.9], ["4", -1.1, -0.5], ["5", -1.1, 0.5]];
+      if (n >= 8) r.push(["6", -0.9, -1.7], ["7", -0.9, 1.7], ["8", -2.2, 0]);
+      r.push(["9", n >= 8 ? -3.0 : -2.0, 1.9]);
+      return r;
     }
   },
   scrumDefend: {
     label: "Scrum — theirs",
+    kind: "scrum",
     ages: {
       u12: 5,
       u14: 8
     },
     shape: n => {
-      // mirrored — their front row faces ours
-      const rows = [["1", 0, 15], ["2", 0, 0], ["3", 0, -15], ["4", 20, 8], ["5", 20, -8]];
-      if (n >= 8) rows.push(["6", 17, 28], ["7", 17, -28], ["8", 38, 0]);
-      rows.push(["9", n >= 8 ? 50 : 34, -26]);
-      return rows;
+      const r = [["1", 0, 0.9], ["2", 0, 0], ["3", 0, -0.9], ["4", 1.1, 0.5], ["5", 1.1, -0.5]];
+      if (n >= 8) r.push(["6", 0.9, 1.7], ["7", 0.9, -1.7], ["8", 2.2, 0]);
+      r.push(["9", n >= 8 ? 3.0 : 2.0, -1.9]);
+      return r;
     }
   },
   lineoutAttack: {
     label: "Lineout — ours",
+    kind: "lineout",
     ages: {
       u12: 5,
       u14: 5
     },
-    shape: () => [["2", 0, -34], ["1", 0, 0], ["3", 0, 21], ["4", 0, 42], ["5", 0, 63], ["9", -26, 50]]
+    // tap the touchline: 2 throws in, 1 stands on the 5m line, rest back to 15m
+    shape: () => [["2", 0, 0], ["1", 0, 5], ["3", 0, 8.3], ["4", 0, 11.6], ["5", 0, 15], ["9", -4, 11]]
   },
   lineoutDefend: {
     label: "Lineout — theirs",
+    kind: "lineout",
+    shape: () => [["1", 1.5, 5], ["3", 1.5, 8.3], ["4", 1.5, 11.6], ["5", 1.5, 15], ["9", 5, 11], ["2", 4, 1]],
     ages: {
       u12: 5,
       u14: 5
-    },
-    shape: () => [["1", 0, 0], ["3", 0, 21], ["4", 0, 42], ["5", 0, 63], ["9", 26, 50], ["2", 26, -20]]
+    }
   }
 };
 const TOOLS = [{
@@ -3793,6 +3768,7 @@ function BuilderTab({
   const [platform, setPlatform] = useState("");
   const [zone, setZone] = useState("");
   const [dashed, setDashed] = useState(false);
+  const [numText, setNumText] = useState("");
   const [drillId, setDrillId] = useState("");
   const [meta, setMeta] = useState({
     cat: "Handling",
@@ -3873,13 +3849,20 @@ function BuilderTab({
       const key = tool.slice(5);
       const f = FORMATIONS[key];
       const n = f.ages[age] || 5;
-      const stamp = f.shape(n).map(([label, dx, dy], i) => ({
-        id: Date.now() + i,
-        type: key.endsWith("Defend") ? "numD" : "num",
-        x: x + dx,
-        y: y + dy,
-        n: label
-      }));
+      const P = pitchBox(age, view);
+      const k = bg === "pitch" ? P.scale : 7; // metres to canvas units
+      const port = bg === "pitch" && P.portrait;
+      const stamp = f.shape(n).map(([label, along, across], i) => {
+        const dx = port ? across * k : along * k;
+        const dy = port ? -along * k : across * k;
+        return {
+          id: Date.now() + i,
+          type: key.endsWith("Defend") ? "numD" : "num",
+          x: x + dx,
+          y: y + dy,
+          n: label
+        };
+      });
       setItems(a => [...a, ...stamp]);
       return;
     }
@@ -3895,13 +3878,33 @@ function BuilderTab({
       return;
     }
     if (tool === "num") {
-      const n = items.filter(i => i.type === "num").length + 1;
+      // tapping an existing player renumbers it; tapping empty grass adds one
+      let best = null,
+        bestD = (R + 8) ** 2;
+      items.forEach(it => {
+        if (it.type !== "num" && it.type !== "numD") return;
+        const d = (it.x - x) ** 2 + (it.y - y) ** 2;
+        if (d < bestD) {
+          bestD = d;
+          best = it.id;
+        }
+      });
+      const label = numText.trim();
+      if (best !== null) {
+        if (!label) return flash("Type the number first, then tap the player");
+        setItems(a => a.map(it => it.id === best ? {
+          ...it,
+          n: label
+        } : it));
+        return;
+      }
+      const auto = items.filter(i => i.type === "num" || i.type === "numD").length + 1;
       setItems(a => [...a, {
         id: Date.now(),
         type: "num",
         x,
         y,
-        n
+        n: label || String(auto)
       }]);
       return;
     }
@@ -3972,21 +3975,22 @@ function BuilderTab({
     PY = 12,
     PW = 280,
     PH = 210;
+  const R = discR(age, view, bg);
   const disc = (it, fill, label, txtCol) => /*#__PURE__*/React.createElement("g", {
     key: it.id
   }, /*#__PURE__*/React.createElement("circle", {
     cx: it.x,
     cy: it.y,
-    r: 10,
+    r: R,
     fill: fill,
     stroke: "rgba(0,0,0,0.55)",
-    strokeWidth: 1.6
+    strokeWidth: R > 7 ? 1.6 : 1.1
   }), /*#__PURE__*/React.createElement("text", {
     x: it.x,
-    y: it.y + 4,
+    y: it.y + R * 0.36,
     textAnchor: "middle",
     fill: txtCol,
-    fontSize: 10,
+    fontSize: R * 1.02,
     fontWeight: "bold"
   }, label));
   const draw = it => {
@@ -4004,7 +4008,7 @@ function BuilderTab({
       case "cone":
         return /*#__PURE__*/React.createElement("polygon", {
           key: it.id,
-          points: `${it.x},${it.y - 9} ${it.x - 7},${it.y + 5} ${it.x + 7},${it.y + 5}`,
+          points: `${it.x},${it.y - R * 0.9} ${it.x - R * 0.7},${it.y + R * 0.5} ${it.x + R * 0.7},${it.y + R * 0.5}`,
           fill: IC.cone,
           stroke: "rgba(0,0,0,0.5)"
         });
@@ -4013,11 +4017,11 @@ function BuilderTab({
           key: it.id,
           cx: it.x,
           cy: it.y,
-          rx: 7,
-          ry: 4.5,
+          rx: R * 0.7,
+          ry: R * 0.45,
           fill: IC.ball,
           stroke: "#000",
-          strokeWidth: 1.2
+          strokeWidth: 1.1
         });
       case "run":
         return /*#__PURE__*/React.createElement("line", {
@@ -4135,7 +4139,23 @@ function BuilderTab({
       border: `1px solid ${dashed ? C.gold : C.line}`,
       fontWeight: 700
     }
-  }, dashed ? "Dashed ✓" : "Dashed"), tool === "text" && /*#__PURE__*/React.createElement("input", {
+  }, dashed ? "Dashed ✓" : "Dashed"), tool === "num" && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    value: numText,
+    onChange: e => setNumText(e.target.value),
+    maxLength: 3,
+    placeholder: "Number (leave blank to count up)",
+    style: S.input
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10.5,
+      color: C.muted,
+      marginTop: 4
+    }
+  }, "Tap an existing player to renumber them, or empty grass to add one.")), tool === "text" && /*#__PURE__*/React.createElement("input", {
     value: labelText,
     onChange: e => setLabelText(e.target.value),
     placeholder: "Type the label, then tap the pitch",

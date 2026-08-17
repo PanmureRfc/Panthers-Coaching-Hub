@@ -1,6 +1,6 @@
 /* Caches the app so it opens on a cold pitch with no signal.
    Bump CACHE when you change any file, or phones keep the old version. */
-const CACHE = "panthers-v16";
+const CACHE = "panthers-v17";
 const FILES = ["./", "./index.html", "./app.js", "./storage.js", "./config.js", "./manifest.json"];
 
 self.addEventListener("install", (e) => {
