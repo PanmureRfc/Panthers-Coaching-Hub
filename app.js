@@ -946,6 +946,97 @@ const AGES = [{
     icon: "👥",
     body: "Every player gets equal game time, regardless of ability. Max 40 minutes per game, 60 minutes of playing time across a festival."
   }]
+}, {
+  id: "u14",
+  label: "U14",
+  full: "U14 / S2",
+  strapline: "Best space, speed, low tackle, set piece",
+  tiles: [{
+    title: "Players",
+    value: "15 v 15",
+    icon: "👥"
+  }, {
+    title: "Pitch",
+    value: "Full pitch",
+    icon: "📐"
+  }, {
+    title: "Ball",
+    value: "Size 4",
+    icon: "🏉"
+  }, {
+    title: "Game length",
+    value: "Max 60 min",
+    icon: "⏱️"
+  }, {
+    title: "Scoring",
+    value: "Try 5 · Con 2 · Pen 3",
+    icon: "🔢"
+  }, {
+    title: "Tackle",
+    value: "Waist & below",
+    icon: "🤝"
+  }, {
+    title: "Breakdown",
+    value: "Full World Rugby laws",
+    icon: "⚔️"
+  }, {
+    title: "Hand off",
+    value: "Allowed — not head or neck",
+    icon: "✋"
+  }, {
+    title: "Scrum",
+    value: "8v8, contested hook, 1m push",
+    icon: "🐏"
+  }, {
+    title: "Lineout",
+    value: "Min hooker + 4, uncontested",
+    icon: "🙌"
+  }, {
+    title: "Kicking",
+    value: "Full options, 50:22 included",
+    icon: "🦶"
+  }, {
+    title: "Game time",
+    value: "Half Game Policy applies",
+    icon: "⚖️"
+  }],
+  cards: [{
+    title: "Focus for this stage",
+    icon: "🎯",
+    body: "SRU's Blueprint priorities at U14: find the best space in attack using run, pass or kick; play with speed and keep the ball alive; develop effective low tackle technique; develop set piece skills."
+  }, {
+    title: "Scrum",
+    icon: "🐏",
+    body: "8 v 8 — three front row, two second row, two flankers and a number 8. Both hookers may strike. Maximum push of 1m, with the referee calling 'Stop Pushing' at 0.5m. The 8 can pick and pass to the scrum half. The attacking 9 may pass or run. The defending 9 cannot pass the mid-point until the ball is out — penalty if they do. Early push, or pushing more than 1m, is a free kick."
+  }, {
+    title: "Lineout",
+    icon: "🙌",
+    body: "Minimum of hooker plus 4 from each team, uncontested — the throwing team wins it. The catcher must pass immediately to the scrum half. The attacking 9 must pass or run beyond the back, never through it. Defending hooker and 9 stand 2m from the middle. Everyone else stays back until the ball crosses the rear. Any lineout offence is a free kick."
+  }, {
+    title: "The Breakdown",
+    icon: "⚔️",
+    body: "Full World Rugby laws now — no cap on numbers. Tackler releases and rolls away as soon as the tackle is complete. Arriving players support their own body weight when jackaling and come through the gate. Offside line is the hindmost point; defence can't move until the ball is played. Keep encouraging them to keep the ball alive."
+  }, {
+    title: "Tackle Height",
+    icon: "🎯",
+    body: "Still waist and below, and no targeting the ball. No swing tackles — the tackler brings the carrier down safely. Sanction steps up to a penalty now rather than a free kick. Referees may play advantage if height creeps just above the green zone and the carrier can still pass."
+  }, {
+    title: "Kicking",
+    icon: "🦶",
+    body: "All open play kicks permitted, including 50:22s. Goal line and 22m drop-outs follow World Rugby Law 12 — the ball must travel 5m, chasers behind the kicker, defenders behind the 5m line."
+  }, {
+    title: "Conversions",
+    icon: "🥅",
+    body: "If a try is scored in the wide channels — between the touchline and the 15m line — the kicker may bring the ball anywhere along the 15m line to take the conversion."
+  }, {
+    title: "Restarts",
+    icon: "🔄",
+    body: "Drop kick from the centre, must travel 10m, receiving team 10m back. After a try the team that SCORES restarts. Chasers in front of the kicker: scrum to the other team. Ball short of 10m: retake, or scrum to the other team."
+  }, {
+    title: "Scoring",
+    icon: "🔢",
+    body: "Full scoring arrives — 5 for a try, 2 for a conversion, 3 for a penalty."
+  }]
 }];
 const findAge = id => AGES.find(a => a.id === id) || AGES[0];
 
@@ -954,7 +1045,7 @@ const DRILLS = [{
   id: 1,
   name: "Chicken, Hero, Duck",
   cat: "Warm-Up",
-  ages: ["u10", "u12"],
+  ages: ["u10", "u12", "u14"],
   dur: 12,
   energy: "high",
   players: "8+",
@@ -966,7 +1057,7 @@ const DRILLS = [{
   id: 2,
   name: "Toilet Tig",
   cat: "Warm-Up",
-  ages: ["u10", "u12"],
+  ages: ["u10", "u12", "u14"],
   dur: 10,
   energy: "high",
   players: "8+",
@@ -978,7 +1069,7 @@ const DRILLS = [{
   id: 3,
   name: "Relay Circuit",
   cat: "Warm-Up",
-  ages: ["u10", "u12"],
+  ages: ["u10", "u12", "u14"],
   dur: 12,
   energy: "high",
   players: "8+",
@@ -990,7 +1081,7 @@ const DRILLS = [{
   id: 4,
   name: "Two-Line Passing",
   cat: "Handling",
-  ages: ["u10", "u12"],
+  ages: ["u10", "u12", "u14"],
   dur: 15,
   energy: "medium",
   players: "8+",
@@ -1002,7 +1093,7 @@ const DRILLS = [{
   id: 17,
   name: "4 Corners",
   cat: "Handling",
-  ages: ["u10", "u12"],
+  ages: ["u10", "u12", "u14"],
   dur: 15,
   energy: "medium",
   players: "8+",
@@ -1014,7 +1105,7 @@ const DRILLS = [{
   id: 5,
   name: "5 Pass",
   cat: "Handling",
-  ages: ["u10", "u12"],
+  ages: ["u10", "u12", "u14"],
   dur: 12,
   energy: "medium",
   players: "8+",
@@ -1026,7 +1117,7 @@ const DRILLS = [{
   id: 6,
   name: "Money Ball",
   cat: "Handling",
-  ages: ["u10", "u12"],
+  ages: ["u10", "u12", "u14"],
   dur: 12,
   energy: "medium",
   players: "8+",
@@ -1038,7 +1129,7 @@ const DRILLS = [{
   id: 7,
   name: "5 Pass Breakout",
   cat: "Handling",
-  ages: ["u10", "u12"],
+  ages: ["u10", "u12", "u14"],
   dur: 12,
   energy: "high",
   players: "8+",
@@ -1050,7 +1141,7 @@ const DRILLS = [{
   id: 8,
   name: "Hawick Ball",
   cat: "Core Game",
-  ages: ["u10", "u12"],
+  ages: ["u10", "u12", "u14"],
   dur: 12,
   energy: "high",
   players: "10+",
@@ -1062,7 +1153,7 @@ const DRILLS = [{
   id: 9,
   name: "Disco Touch",
   cat: "Handling",
-  ages: ["u10", "u12"],
+  ages: ["u10", "u12", "u14"],
   dur: 15,
   energy: "high",
   players: "8+",
@@ -1074,7 +1165,7 @@ const DRILLS = [{
   id: 10,
   name: "Tackle 1 — Ground Confidence",
   cat: "Tackle",
-  ages: ["u10", "u12"],
+  ages: ["u10", "u12", "u14"],
   dur: 12,
   energy: "medium",
   players: "6+",
@@ -1086,7 +1177,7 @@ const DRILLS = [{
   id: 11,
   name: "Tackle 2 — Kneeling",
   cat: "Tackle",
-  ages: ["u10", "u12"],
+  ages: ["u10", "u12", "u14"],
   dur: 15,
   energy: "medium",
   players: "6+",
@@ -1098,7 +1189,7 @@ const DRILLS = [{
   id: 12,
   name: "Tackle 3 — Walking, From the Side",
   cat: "Tackle",
-  ages: ["u10", "u12"],
+  ages: ["u10", "u12", "u14"],
   dur: 15,
   energy: "medium",
   players: "6+",
@@ -1110,7 +1201,7 @@ const DRILLS = [{
   id: 13,
   name: "Tackle 4 — Moving, From the Front",
   cat: "Tackle",
-  ages: ["u10", "u12"],
+  ages: ["u10", "u12", "u14"],
   dur: 15,
   energy: "high",
   players: "6+",
@@ -1134,7 +1225,7 @@ const DRILLS = [{
   id: 15,
   name: "Tackle 6 — Live 1v1 and 2v2",
   cat: "Tackle",
-  ages: ["u10", "u12"],
+  ages: ["u10", "u12", "u14"],
   dur: 15,
   energy: "high",
   players: "8+",
@@ -1146,7 +1237,7 @@ const DRILLS = [{
   id: 20,
   name: "Barbarians",
   cat: "Core Game",
-  ages: ["u10", "u12"],
+  ages: ["u10", "u12", "u14"],
   dur: 12,
   energy: "high",
   players: "8+",
@@ -1158,7 +1249,7 @@ const DRILLS = [{
   id: 21,
   name: "Bannockburn",
   cat: "Core Game",
-  ages: ["u10", "u12"],
+  ages: ["u10", "u12", "u14"],
   dur: 12,
   energy: "high",
   players: "10+",
@@ -1170,7 +1261,7 @@ const DRILLS = [{
   id: 22,
   name: "Highlanders",
   cat: "Core Game",
-  ages: ["u10", "u12"],
+  ages: ["u10", "u12", "u14"],
   dur: 12,
   energy: "high",
   players: "8+",
@@ -1182,7 +1273,7 @@ const DRILLS = [{
   id: 23,
   name: "Caley Ball",
   cat: "Core Game",
-  ages: ["u10", "u12"],
+  ages: ["u10", "u12", "u14"],
   dur: 12,
   energy: "high",
   players: "10+",
@@ -1194,7 +1285,7 @@ const DRILLS = [{
   id: 24,
   name: "Wallace Ball",
   cat: "Core Game",
-  ages: ["u10", "u12"],
+  ages: ["u10", "u12", "u14"],
   dur: 12,
   energy: "high",
   players: "10+",
@@ -1206,7 +1297,7 @@ const DRILLS = [{
   id: 25,
   name: "Muckabout",
   cat: "Warm-Up",
-  ages: ["u10", "u12"],
+  ages: ["u10", "u12", "u14"],
   dur: 8,
   energy: "high",
   players: "6+",
@@ -1244,7 +1335,7 @@ const setAllDrills = list => {
   ALL_DRILLS = list;
 };
 const findDrill = id => ALL_DRILLS.find(d => String(d.id) === String(id));
-const APP_VERSION = "v12";
+const APP_VERSION = "v13";
 
 // ── BLOCK 1 ──────────────────────────────────────────────────
 const BLOCKS = {
@@ -1285,7 +1376,8 @@ const BLOCKS = {
     drills: [2, 9, 8, 15, 16],
     why: "Under 3-2-1, three different scorers beat one player scoring three. Playing it out loud teaches unselfishness without anyone being told off for being greedy."
   }],
-  u12: []
+  u12: [],
+  u14: []
 };
 const SESSION_TYPES = {
   sunday: {
@@ -2971,6 +3063,12 @@ const PITCHES = {
     wide: 40,
     ingoal: 5,
     label: "60m x 40m · 5m in-goals"
+  },
+  u14: {
+    long: 100,
+    wide: 70,
+    ingoal: 10,
+    label: "Full pitch"
   }
 };
 function pitchBox(age) {
@@ -4493,7 +4591,9 @@ function App() {
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
-      gap: 5
+      gap: 5,
+      flexWrap: "wrap",
+      justifyContent: "flex-end"
     }
   }, AGES.map(a => /*#__PURE__*/React.createElement("button", {
     key: a.id,
