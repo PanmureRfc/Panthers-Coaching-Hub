@@ -1335,7 +1335,7 @@ const setAllDrills = list => {
   ALL_DRILLS = list;
 };
 const findDrill = id => ALL_DRILLS.find(d => String(d.id) === String(id));
-const APP_VERSION = "v19";
+const APP_VERSION = "v20";
 
 // ── BLOCK 1 ──────────────────────────────────────────────────
 const BLOCKS = {
@@ -2290,18 +2290,9 @@ function VisualsTab({
       maxWidth: 520,
       margin: "0 auto"
     }
-  }, cd ? /*#__PURE__*/React.createElement("svg", {
-    viewBox: "0 0 340 250",
-    style: {
-      width: "100%",
-      borderRadius: 4,
-      display: "block"
-    }
-  }, /*#__PURE__*/React.createElement(Markers, null), /*#__PURE__*/React.createElement(PitchBg, {
-    bg: cd.bg,
-    age: age,
-    view: cd.view
-  }), cd.items.map(it => drawItem(it, discR(age, cd.view, cd.bg)))) : /*#__PURE__*/React.createElement(PitchDiagram, {
+  }, cd ? /*#__PURE__*/React.createElement(AnimatedDiagram, {
+    d: cd
+  }) : /*#__PURE__*/React.createElement(PitchDiagram, {
     type: d.id
   })), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -2966,6 +2957,127 @@ const STANDS = [{
 }];
 
 // Shared item renderer — used by the builder and by saved team setups
+// Where an item sits at a given step. Steps inherit from the step before,
+// so a player only needs moving on the step where they actually move.
+function posAt(it, frames, step) {
+  let x = it.x,
+    y = it.y,
+    x2 = it.x2,
+    y2 = it.y2;
+  for (let i = 0; i < step && i < (frames || []).length; i++) {
+    const f = frames[i][it.id];
+    if (f) {
+      x = f.x;
+      y = f.y;
+      if (f.x2 !== undefined) {
+        x2 = f.x2;
+        y2 = f.y2;
+      }
+    }
+  }
+  return {
+    ...it,
+    x,
+    y,
+    x2,
+    y2
+  };
+}
+function lerpItem(it, frames, t) {
+  const i = Math.min(Math.floor(t), (frames || []).length);
+  const f = t - i;
+  const a = posAt(it, frames, i),
+    b = posAt(it, frames, i + 1);
+  return {
+    ...it,
+    x: a.x + (b.x - a.x) * f,
+    y: a.y + (b.y - a.y) * f
+  };
+}
+
+// Plays back a saved play, tweening players between steps.
+function AnimatedDiagram({
+  d,
+  height
+}) {
+  const steps = 1 + (d.frames || []).length;
+  const [t, setT] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  useEffect(() => {
+    if (!playing || steps < 2) return;
+    let raf,
+      last = performance.now();
+    const tick = now => {
+      const dt = (now - last) / 1000;
+      last = now;
+      setT(v => {
+        const next = v + dt * 0.85;
+        return next >= steps - 1 ? 0 : next;
+      });
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [playing, steps]);
+  const R = discR(d.age, d.view, d.bg);
+  const shown = (d.items || []).map(it => it.x2 !== undefined ? posAt(it, d.frames, Math.round(t)) : lerpItem(it, d.frames, t));
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("svg", {
+    viewBox: "0 0 340 250",
+    style: {
+      width: "100%",
+      borderRadius: 4,
+      display: "block",
+      height
+    }
+  }, /*#__PURE__*/React.createElement(Markers, null), /*#__PURE__*/React.createElement(PitchBg, {
+    bg: d.bg,
+    age: d.age,
+    view: d.view
+  }), shown.map(it => drawItem(it, R))), steps > 1 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      alignItems: "center",
+      marginTop: 8,
+      flexWrap: "wrap"
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setPlaying(!playing),
+    style: {
+      ...S.btnPrimary,
+      padding: "8px 16px"
+    }
+  }, playing ? "❙❙ Pause" : "▶ Play"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      setPlaying(false);
+      setT(0);
+    },
+    style: {
+      ...S.btnGhost,
+      padding: "8px 12px"
+    }
+  }, "Reset"), /*#__PURE__*/React.createElement("input", {
+    type: "range",
+    min: 0,
+    max: steps - 1,
+    step: 0.01,
+    value: t,
+    onChange: e => {
+      setPlaying(false);
+      setT(Number(e.target.value));
+    },
+    style: {
+      flex: 1,
+      minWidth: 120,
+      accentColor: C.gold
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      color: C.muted
+    }
+  }, "Step ", Math.round(t) + 1, " of ", steps)));
+}
 function drawItem(it, R = 10) {
   const disc = (fill, label, txtCol) => /*#__PURE__*/React.createElement("g", {
     key: it.id
@@ -3545,7 +3657,7 @@ function PlayersTab({
       maxWidth: 520,
       margin: "0 auto"
     }
-  }, /*#__PURE__*/React.createElement("svg", {
+  }, cd ? null : /*#__PURE__*/React.createElement("svg", {
     viewBox: "0 0 340 250",
     style: {
       width: "100%",
@@ -3553,10 +3665,10 @@ function PlayersTab({
       display: "block"
     }
   }, /*#__PURE__*/React.createElement(Markers, null), /*#__PURE__*/React.createElement(PitchBg, {
-    bg: cd ? cd.bg : "pitch",
+    bg: "pitch",
     age: age,
-    view: cd ? cd.view : "full"
-  }), cd ? cd.items.map(it => drawItem(it, discR(age, cd.view, cd.bg))) : /*#__PURE__*/React.createElement(React.Fragment, null, (st.lines || []).map(([x1, y1, x2, y2], i) => /*#__PURE__*/React.createElement("line", {
+    view: "full"
+  }), /*#__PURE__*/React.createElement(React.Fragment, null, (st.lines || []).map(([x1, y1, x2, y2], i) => /*#__PURE__*/React.createElement("line", {
     key: i,
     x1: x1,
     y1: y1,
@@ -3573,7 +3685,9 @@ function PlayersTab({
     fill: IC.ball,
     stroke: "#000",
     strokeWidth: 1.2
-  }), st.ours.map(([x, y, l]) => dot(x, y, l, true)), st.theirs.map(([x, y, l]) => dot(x, y, l, false))))), /*#__PURE__*/React.createElement("div", {
+  }), st.ours.map(([x, y, l]) => dot(x, y, l, true)), st.theirs.map(([x, y, l]) => dot(x, y, l, false)))), cd && /*#__PURE__*/React.createElement(AnimatedDiagram, {
+    d: cd
+  })), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       justifyContent: "center",
@@ -3746,6 +3860,10 @@ const TOOLS = [{
   label: "Label",
   c: IC.text
 }, {
+  k: "move",
+  label: "Move",
+  c: IC.num
+}, {
   k: "erase",
   label: "Erase",
   c: C.muted
@@ -3774,6 +3892,9 @@ function BuilderTab({
   const [dashed, setDashed] = useState(false);
   const [numText, setNumText] = useState("");
   const [history, setHistory] = useState([]);
+  const [frames, setFrames] = useState([]);
+  const [step, setStep] = useState(0);
+  const [moveSel, setMoveSel] = useState(null);
 
   // Every change goes through here, so one undo steps back one action —
   // dropping a whole scrum in counts as one.
@@ -3799,6 +3920,8 @@ function BuilderTab({
   useEffect(() => {
     if (!seed) return;
     setHistory([]);
+    setFrames(seed.frames || []);
+    setStep(0);
     setItems(seed.items || []);
     setName(seed.name || "");
     setBg(seed.bg || "pitch");
@@ -3823,6 +3946,42 @@ function BuilderTab({
       x,
       y
     } = coords(e);
+    if (tool === "move") {
+      if (moveSel === null) {
+        let best = null,
+          bestD = (R + 10) ** 2;
+        items.forEach(it => {
+          const p = posAt(it, frames, step);
+          const d = (p.x - x) ** 2 + (p.y - y) ** 2;
+          if (d < bestD) {
+            bestD = d;
+            best = it.id;
+          }
+        });
+        if (best === null) return flash("Tap a player or cone to move it");
+        setMoveSel(best);
+        return;
+      }
+      const id = moveSel;
+      setMoveSel(null);
+      if (step === 0) {
+        change(a => a.map(it => it.id === id ? {
+          ...it,
+          x,
+          y
+        } : it));
+      } else {
+        setHistory(h => [...h.slice(-40), items]);
+        setFrames(f => f.map((fr, i) => i === step - 1 ? {
+          ...fr,
+          [id]: {
+            x,
+            y
+          }
+        } : fr));
+      }
+      return;
+    }
     if (tool === "erase") {
       let best = null,
         bestD = 24 * 24;
@@ -3981,6 +4140,7 @@ function BuilderTab({
       name: name.trim(),
       bg,
       items,
+      frames,
       kind,
       age,
       view,
@@ -3992,6 +4152,9 @@ function BuilderTab({
   };
   const load = d => {
     setHistory([]);
+    setFrames(d.frames || []);
+    setStep(0);
+    setMoveSel(null);
     setItems(d.items);
     setBg(d.bg || "pitch");
     setName(d.name);
@@ -4244,6 +4407,84 @@ function BuilderTab({
   }, f.label, " (", f.ages[age], ")"))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
+      gap: 6,
+      alignItems: "center",
+      flexWrap: "wrap",
+      marginBottom: 10,
+      padding: "9px 11px",
+      background: C.panel2,
+      borderRadius: 3
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      ...S.microHd,
+      marginBottom: 0
+    }
+  }, "Steps"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      setStep(Math.max(0, step - 1));
+      setMoveSel(null);
+    },
+    disabled: step === 0,
+    style: {
+      ...S.btnGhost,
+      padding: "6px 11px",
+      opacity: step === 0 ? 0.35 : 1
+    }
+  }, "◀"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 12,
+      color: C.gold,
+      fontWeight: 700,
+      minWidth: 62,
+      textAlign: "center"
+    }
+  }, step + 1, " of ", frames.length + 1), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      setStep(Math.min(frames.length, step + 1));
+      setMoveSel(null);
+    },
+    disabled: step >= frames.length,
+    style: {
+      ...S.btnGhost,
+      padding: "6px 11px",
+      opacity: step >= frames.length ? 0.35 : 1
+    }
+  }, "▶"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      setFrames(f => [...f, {}]);
+      setStep(frames.length + 1);
+      setTool("move");
+      setMoveSel(null);
+    },
+    style: {
+      ...S.btnPrimary,
+      padding: "7px 12px",
+      fontSize: 11
+    }
+  }, "+ Add step"), frames.length > 0 && /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      setFrames(f => f.filter((_, i) => i !== step - 1));
+      setStep(Math.max(0, step - 1));
+    },
+    disabled: step === 0,
+    style: {
+      ...S.btnGhost,
+      padding: "6px 11px",
+      fontSize: 11,
+      opacity: step === 0 ? 0.35 : 1,
+      color: C.redL
+    }
+  }, "Delete step"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10.5,
+      color: C.muted,
+      width: "100%",
+      lineHeight: 1.5
+    }
+  }, frames.length === 0 ? "Add a step, then use Move to drag players to where they end up. The play animates between steps." : step === 0 ? "This is the starting position. Everything you add goes here." : "Use Move to reposition players for this step. Anyone you don't move stays put.")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
       gap: 8,
       alignItems: "center",
       flexWrap: "wrap",
@@ -4276,7 +4517,7 @@ function BuilderTab({
       color: pending ? C.gold : C.muted,
       marginBottom: 8
     }
-  }, tool.startsWith("form:") ? "Tap the pitch to drop the whole set piece in, numbered." : tool === "erase" ? "Tap anything to remove it." : tool === "arc" || tool === "arc2" ? pending ? "Now tap where the run finishes." : "Tap where the run starts, then where it finishes. Use the two arc buttons to bow it either way." : tool === "run" || tool === "pass" ? pending ? "Now tap where it ends." : "Tap where it starts, then where it ends." : tool === "text" ? "Type a label above, then tap the pitch." : "Tap the pitch to place."), /*#__PURE__*/React.createElement("svg", {
+  }, tool.startsWith("form:") ? "Tap the pitch to drop the whole set piece in, numbered." : tool === "move" ? moveSel !== null ? "Now tap where they end up." : "Tap a player, then tap where they move to." : tool === "erase" ? "Tap anything to remove it." : tool === "arc" || tool === "arc2" ? pending ? "Now tap where the run finishes." : "Tap where the run starts, then where it finishes. Use the two arc buttons to bow it either way." : tool === "run" || tool === "pass" ? pending ? "Now tap where it ends." : "Tap where it starts, then where it ends." : tool === "text" ? "Type a label above, then tap the pitch." : "Tap the pitch to place."), /*#__PURE__*/React.createElement("svg", {
     viewBox: `0 0 ${VW} ${VH}`,
     onClick: tap,
     style: {
@@ -4310,7 +4551,20 @@ function BuilderTab({
     bg: bg,
     age: age,
     view: view
-  }), items.map(draw), pending && /*#__PURE__*/React.createElement("circle", {
+  }), items.map(it => draw(posAt(it, frames, step))), moveSel !== null && (() => {
+    const it = items.find(i => i.id === moveSel);
+    if (!it) return null;
+    const p = posAt(it, frames, step);
+    return /*#__PURE__*/React.createElement("circle", {
+      cx: p.x,
+      cy: p.y,
+      r: R + 5,
+      fill: "none",
+      stroke: C.gold,
+      strokeWidth: 2,
+      strokeDasharray: "4,3"
+    });
+  })(), pending && /*#__PURE__*/React.createElement("circle", {
     cx: pending.x,
     cy: pending.y,
     r: 5,
