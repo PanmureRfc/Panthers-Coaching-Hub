@@ -1335,7 +1335,7 @@ const setAllDrills = list => {
   ALL_DRILLS = list;
 };
 const findDrill = id => ALL_DRILLS.find(d => String(d.id) === String(id));
-const APP_VERSION = "v20";
+const APP_VERSION = "v21";
 
 // ── BLOCK 1 ──────────────────────────────────────────────────
 const BLOCKS = {
@@ -1480,7 +1480,10 @@ function DrillBody({
     id: "own" + d.id,
     name: "",
     bg: d.bg,
-    items: d.items
+    items: d.items,
+    frames: d.frames,
+    age: d.age,
+    view: d.view
   }] : [];
   const pics = own.concat(mine);
   return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
@@ -1494,18 +1497,9 @@ function DrillBody({
     style: {
       margin: "0 0 10px"
     }
-  }, /*#__PURE__*/React.createElement("svg", {
-    viewBox: "0 0 340 250",
-    style: {
-      width: "100%",
-      borderRadius: 4,
-      display: "block"
-    }
-  }, /*#__PURE__*/React.createElement(Markers, null), /*#__PURE__*/React.createElement(PitchBg, {
-    bg: c.bg,
-    age: c.age,
-    view: c.view
-  }), c.items.map(it => drawItem(it, discR(c.age, c.view, c.bg)))), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(AnimatedDiagram, {
+    d: c
+  }), c.name && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
       color: C.muted,
@@ -3895,6 +3889,21 @@ function BuilderTab({
   const [frames, setFrames] = useState([]);
   const [step, setStep] = useState(0);
   const [moveSel, setMoveSel] = useState(null);
+  const [preview, setPreview] = useState(false);
+  const [pt, setPt] = useState(0);
+  useEffect(() => {
+    if (!preview || frames.length === 0) return;
+    let raf,
+      last = performance.now();
+    const tick = now => {
+      const dt = (now - last) / 1000;
+      last = now;
+      setPt(v => v + dt * 0.85 >= frames.length ? 0 : v + dt * 0.85);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [preview, frames.length]);
 
   // Every change goes through here, so one undo steps back one action —
   // dropping a whole scrum in counts as one.
@@ -4126,6 +4135,8 @@ function BuilderTab({
         equip: meta.equip.trim() || "Cones",
         ages: [age],
         age,
+        view,
+        frames,
         desc: meta.desc.trim(),
         points: [meta.p1, meta.p2, meta.p3].filter(x => x.trim()),
         tip: meta.tip.trim(),
@@ -4464,6 +4475,19 @@ function BuilderTab({
     }
   }, "+ Add step"), frames.length > 0 && /*#__PURE__*/React.createElement("button", {
     onClick: () => {
+      setPreview(!preview);
+      setPt(0);
+      setMoveSel(null);
+    },
+    style: {
+      ...S.btnPrimary,
+      padding: "7px 12px",
+      fontSize: 11,
+      background: preview ? C.maroon : C.gold,
+      color: preview ? C.white : "#000"
+    }
+  }, preview ? "❙❙ Stop" : "▶ Play it"), frames.length > 0 && /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
       setFrames(f => f.filter((_, i) => i !== step - 1));
       setStep(Math.max(0, step - 1));
     },
@@ -4551,7 +4575,7 @@ function BuilderTab({
     bg: bg,
     age: age,
     view: view
-  }), items.map(it => draw(posAt(it, frames, step))), moveSel !== null && (() => {
+  }), items.map(it => draw(preview ? it.x2 !== undefined ? posAt(it, frames, Math.round(pt)) : lerpItem(it, frames, pt) : posAt(it, frames, step))), moveSel !== null && (() => {
     const it = items.find(i => i.id === moveSel);
     if (!it) return null;
     const p = posAt(it, frames, step);
@@ -4636,7 +4660,7 @@ function BuilderTab({
       marginTop: 6,
       lineHeight: 1.6
     }
-  }, kind === "setup" ? "Team setups appear in the Players tab." : kind === "newdrill" ? "Makes a brand new drill you can add to sessions." : "Adds this picture to one of the existing drills."), kind === "drill" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+  }, frames.length > 0 && kind !== "setup" ? "⚠ This has an animation — save it as a Team setup so it lands in the Plays tab." : kind === "setup" ? "Team setups and plays appear in the Plays tab." : kind === "newdrill" ? "Makes a brand new drill you can add to sessions." : "Adds this picture to one of the existing drills."), kind === "drill" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: S.label
   }, "Which drill?"), /*#__PURE__*/React.createElement("select", {
     value: drillId,
@@ -4776,7 +4800,7 @@ function BuilderTab({
       textTransform: "uppercase",
       letterSpacing: 1
     }
-  }, d.kind === "setup" ? "→ Players tab" : d.drillId ? "→ " + (findDrill(Number(d.drillId)) || {}).name : "→ Visuals tab"), /*#__PURE__*/React.createElement("div", {
+  }, d.kind === "setup" ? "→ Plays tab" : d.drillId ? "→ " + (findDrill(Number(d.drillId)) || {}).name : "→ Visuals tab", (d.frames || []).length > 0 ? ` · ${d.frames.length + 1} steps` : ""), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 6,
