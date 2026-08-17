@@ -1335,7 +1335,7 @@ const setAllDrills = list => {
   ALL_DRILLS = list;
 };
 const findDrill = id => ALL_DRILLS.find(d => String(d.id) === String(id));
-const APP_VERSION = "v17";
+const APP_VERSION = "v19";
 
 // ── BLOCK 1 ──────────────────────────────────────────────────
 const BLOCKS = {
@@ -3652,6 +3652,7 @@ const FORMATIONS = {
   scrumAttack: {
     label: "Scrum — ours",
     kind: "scrum",
+    trueScale: false,
     ages: {
       u12: 5,
       u14: 8
@@ -3666,6 +3667,7 @@ const FORMATIONS = {
   scrumDefend: {
     label: "Scrum — theirs",
     kind: "scrum",
+    trueScale: false,
     ages: {
       u12: 5,
       u14: 8
@@ -3680,6 +3682,7 @@ const FORMATIONS = {
   lineoutAttack: {
     label: "Lineout — ours",
     kind: "lineout",
+    trueScale: true,
     ages: {
       u12: 5,
       u14: 5
@@ -3690,6 +3693,7 @@ const FORMATIONS = {
   lineoutDefend: {
     label: "Lineout — theirs",
     kind: "lineout",
+    trueScale: true,
     shape: () => [["1", 1.5, 5], ["3", 1.5, 8.3], ["4", 1.5, 11.6], ["5", 1.5, 15], ["9", 5, 11], ["2", 4, 1]],
     ages: {
       u12: 5,
@@ -3769,6 +3773,14 @@ function BuilderTab({
   const [zone, setZone] = useState("");
   const [dashed, setDashed] = useState(false);
   const [numText, setNumText] = useState("");
+  const [history, setHistory] = useState([]);
+
+  // Every change goes through here, so one undo steps back one action —
+  // dropping a whole scrum in counts as one.
+  const change = fn => {
+    setHistory(h => [...h.slice(-40), items]);
+    setItems(fn);
+  };
   const [drillId, setDrillId] = useState("");
   const [meta, setMeta] = useState({
     cat: "Handling",
@@ -3786,6 +3798,7 @@ function BuilderTab({
   }));
   useEffect(() => {
     if (!seed) return;
+    setHistory([]);
     setItems(seed.items || []);
     setName(seed.name || "");
     setBg(seed.bg || "pitch");
@@ -3822,7 +3835,7 @@ function BuilderTab({
           best = it.id;
         }
       });
-      if (best !== null) setItems(a => a.filter(it => it.id !== best));
+      if (best !== null) change(a => a.filter(it => it.id !== best));
       return;
     }
     if (tool === "run" || tool === "pass" || tool === "arc" || tool === "arc2") {
@@ -3833,7 +3846,7 @@ function BuilderTab({
         });
         return;
       }
-      setItems(a => [...a, {
+      change(a => [...a, {
         id: Date.now(),
         type: tool,
         x: pending.x,
@@ -3849,12 +3862,25 @@ function BuilderTab({
       const key = tool.slice(5);
       const f = FORMATIONS[key];
       const n = f.ages[age] || 5;
+      const onPitch = bg === "pitch";
       const P = pitchBox(age, view);
-      const k = bg === "pitch" ? P.scale : 7; // metres to canvas units
-      const port = bg === "pitch" && P.portrait;
-      const stamp = f.shape(n).map(([label, along, across], i) => {
-        const dx = port ? across * k : along * k;
-        const dy = port ? -along * k : across * k;
+      const port = onPitch && P.portrait;
+
+      // A lineout sits on real markings, so it uses the true pitch scale.
+      // A scrum is only ~4m across — at true scale on a full pitch the players
+      // would overlap, so it gets spacing based on how big the discs are.
+      const k = f.trueScale && onPitch ? P.scale : Math.max(2.44 * R, onPitch ? P.scale : 7);
+
+      // Work out which touchline the coach tapped nearest, and build away from it.
+      let flip = 1;
+      if (onPitch) {
+        const across = port ? (x - P.x) / P.scale : (y - P.y) / P.scale;
+        if (across > P.wide / 2) flip = -1;
+      }
+      const stamp = f.shape(n).map(([label, along, acrossM], i) => {
+        const a = acrossM * flip;
+        const dx = port ? a * k : along * k;
+        const dy = port ? -along * k : a * k;
         return {
           id: Date.now() + i,
           type: key.endsWith("Defend") ? "numD" : "num",
@@ -3863,12 +3889,12 @@ function BuilderTab({
           n: label
         };
       });
-      setItems(a => [...a, ...stamp]);
+      change(a => [...a, ...stamp]);
       return;
     }
     if (tool === "text") {
       if (!labelText.trim()) return flash("Type the label first, then tap the pitch");
-      setItems(a => [...a, {
+      change(a => [...a, {
         id: Date.now(),
         type: "text",
         x,
@@ -3892,14 +3918,14 @@ function BuilderTab({
       const label = numText.trim();
       if (best !== null) {
         if (!label) return flash("Type the number first, then tap the player");
-        setItems(a => a.map(it => it.id === best ? {
+        change(a => a.map(it => it.id === best ? {
           ...it,
           n: label
         } : it));
         return;
       }
       const auto = items.filter(i => i.type === "num" || i.type === "numD").length + 1;
-      setItems(a => [...a, {
+      change(a => [...a, {
         id: Date.now(),
         type: "num",
         x,
@@ -3908,7 +3934,7 @@ function BuilderTab({
       }]);
       return;
     }
-    setItems(a => [...a, {
+    change(a => [...a, {
       id: Date.now(),
       type: tool,
       x,
@@ -3917,11 +3943,15 @@ function BuilderTab({
   };
   const undo = () => {
     setPending(null);
-    setItems(a => a.slice(0, -1));
+    setHistory(h => {
+      if (!h.length) return h;
+      setItems(h[h.length - 1]);
+      return h.slice(0, -1);
+    });
   };
   const clear = () => {
     setPending(null);
-    setItems([]);
+    change(() => []);
   };
   const doSave = () => {
     if (!name.trim()) return flash("Give it a name first");
@@ -3961,6 +3991,7 @@ function BuilderTab({
     flash(kind === "setup" ? "Saved — it's in the Players tab" : drillId ? "Saved — it's on that drill" : "Saved — it's in the Visuals tab");
   };
   const load = d => {
+    setHistory([]);
     setItems(d.items);
     setBg(d.bg || "pitch");
     setName(d.name);
@@ -4212,6 +4243,35 @@ function BuilderTab({
     }
   }, f.label, " (", f.ages[age], ")"))), /*#__PURE__*/React.createElement("div", {
     style: {
+      display: "flex",
+      gap: 8,
+      alignItems: "center",
+      flexWrap: "wrap",
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: undo,
+    disabled: !history.length,
+    style: {
+      ...S.btnGhost,
+      padding: "8px 16px",
+      opacity: history.length ? 1 : 0.35
+    }
+  }, "↶ Undo"), /*#__PURE__*/React.createElement("button", {
+    onClick: clear,
+    disabled: !items.length,
+    style: {
+      ...S.btnGhost,
+      padding: "8px 14px",
+      opacity: items.length ? 1 : 0.35
+    }
+  }, "Clear all"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      color: C.muted
+    }
+  }, items.length, " item", items.length === 1 ? "" : "s", history.length ? ` · ${history.length} step${history.length === 1 ? "" : "s"} to undo` : "")), /*#__PURE__*/React.createElement("div", {
+    style: {
       fontSize: 11.5,
       color: pending ? C.gold : C.muted,
       marginBottom: 8
@@ -4294,13 +4354,7 @@ function BuilderTab({
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => setBg(bg === "pitch" ? "grid" : "pitch"),
     style: S.btnGhost
-  }, bg === "pitch" ? "Use blank area" : "Use full pitch"), /*#__PURE__*/React.createElement("button", {
-    onClick: undo,
-    style: S.btnGhost
-  }, "Undo"), /*#__PURE__*/React.createElement("button", {
-    onClick: clear,
-    style: S.btnGhost
-  }, "Clear")))), /*#__PURE__*/React.createElement("div", {
+  }, bg === "pitch" ? "Use blank area" : "Use full pitch")))), /*#__PURE__*/React.createElement("div", {
     style: S.colNarrow
   }, /*#__PURE__*/React.createElement(Card, {
     title: "Save it"
