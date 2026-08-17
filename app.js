@@ -1335,7 +1335,7 @@ const setAllDrills = list => {
   ALL_DRILLS = list;
 };
 const findDrill = id => ALL_DRILLS.find(d => String(d.id) === String(id));
-const APP_VERSION = "v22";
+const APP_VERSION = "v23";
 
 // ── BLOCK 1 ──────────────────────────────────────────────────
 const BLOCKS = {
@@ -1482,6 +1482,7 @@ function DrillBody({
     bg: d.bg,
     items: d.items,
     frames: d.frames,
+    ball: d.ball,
     age: d.age,
     view: d.view
   }] : [];
@@ -2999,6 +3000,64 @@ function lerpItem(it, frames, t) {
   };
 }
 
+// The ball belongs to a player, not a position. It follows whoever is carrying
+// it, and only travels on its own at the moment of a pass.
+function carrierAt(frames, step, start) {
+  let c = start || null;
+  for (let i = 0; i < step && i < (frames || []).length; i++) {
+    const b = frames[i]._ball;
+    if (b) c = b.carrier;
+  }
+  return c;
+}
+function ballPos(items, frames, t, start, R) {
+  const i = Math.min(Math.floor(t), (frames || []).length);
+  const f = t - i;
+  const find = id => items.find(x => x.id === id);
+  const cA = carrierAt(frames, i, start),
+    cB = carrierAt(frames, i + 1, start);
+  const lift = R + 5;
+  if (!cA && !cB) return null;
+  if (cA === cB) {
+    const it = find(cA);
+    if (!it) return null;
+    const p = lerpItem(it, frames, t);
+    return {
+      x: p.x,
+      y: p.y - lift
+    };
+  }
+  const a = cA && find(cA) ? posAt(find(cA), frames, i) : null;
+  const b = cB && find(cB) ? posAt(find(cB), frames, i + 1) : null;
+  if (!a) return {
+    x: b.x,
+    y: b.y - lift
+  };
+  if (!b) return {
+    x: a.x,
+    y: a.y - lift
+  };
+  return {
+    x: a.x + (b.x - a.x) * f,
+    y: a.y - lift + (b.y - a.y) * f
+  };
+}
+function BallGlyph({
+  p,
+  R
+}) {
+  if (!p) return null;
+  return /*#__PURE__*/React.createElement("g", null, /*#__PURE__*/React.createElement("ellipse", {
+    cx: p.x,
+    cy: p.y,
+    rx: R * 0.62,
+    ry: R * 0.4,
+    fill: IC.ball,
+    stroke: "#000",
+    strokeWidth: 1.1
+  }));
+}
+
 // Plays back a saved play, tweening players between steps.
 function AnimatedDiagram({
   d,
@@ -3025,6 +3084,7 @@ function AnimatedDiagram({
   }, [playing, steps]);
   const R = discR(d.age, d.view, d.bg);
   const shown = (d.items || []).map(it => it.x2 !== undefined ? posAt(it, d.frames, Math.round(t)) : lerpItem(it, d.frames, t));
+  const bp = ballPos(d.items || [], d.frames, t, d.ball, R);
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("svg", {
     viewBox: "0 0 340 250",
     style: {
@@ -3037,7 +3097,10 @@ function AnimatedDiagram({
     bg: d.bg,
     age: d.age,
     view: d.view
-  }), shown.map(it => drawItem(it, R))), steps > 1 && /*#__PURE__*/React.createElement("div", {
+  }), shown.map(it => drawItem(it, R)), /*#__PURE__*/React.createElement(BallGlyph, {
+    p: bp,
+    R: R
+  })), steps > 1 && /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 8,
@@ -3909,6 +3972,7 @@ function BuilderTab({
   const [moveSel, setMoveSel] = useState(null);
   const [preview, setPreview] = useState(false);
   const [pt, setPt] = useState(0);
+  const [ballStart, setBallStart] = useState(null);
   useEffect(() => {
     if (!preview || frames.length === 0) return;
     let raf,
@@ -3948,6 +4012,7 @@ function BuilderTab({
     if (!seed) return;
     setHistory([]);
     setFrames(seed.frames || []);
+    setBallStart(seed.ball || null);
     setStep(0);
     setItems(seed.items || []);
     setName(seed.name || "");
@@ -3973,13 +4038,13 @@ function BuilderTab({
       x,
       y
     } = coords(e);
-    // Pass: tap the player who receives it, and the ball travels to them.
+    // Pass: tap whoever should have the ball. On step 1 that's who starts with
+    // it; on any later step the ball travels to them from the current carrier.
     if (tool === "ballto") {
-      if (step === 0) return flash("Add a step first — a pass happens between steps");
       let best = null,
         bestD = (R + 12) ** 2;
       items.forEach(it => {
-        if (it.type !== "num" && it.type !== "numD" && it.type !== "A" && it.type !== "D" && it.type !== "nine") return;
+        if (!["num", "numD", "A", "D", "nine"].includes(it.type)) return;
         const p = posAt(it, frames, step);
         const d = (p.x - x) ** 2 + (p.y - y) ** 2;
         if (d < bestD) {
@@ -3987,27 +4052,19 @@ function BuilderTab({
           best = it;
         }
       });
-      if (!best) return flash("Tap the player who receives the pass");
-      const target = posAt(best, frames, step);
-      let ball = items.find(i => i.type === "ball");
+      if (!best) return flash("Tap the player who should have the ball");
       setHistory(h => [...h.slice(-40), items]);
-      if (!ball) {
-        ball = {
-          id: Date.now(),
-          type: "ball",
-          x: target.x,
-          y: target.y - R - 6
-        };
-        setItems(a => [...a, ball]);
+      if (step === 0) {
+        setBallStart(best.id);
+        return flash("Ball starts with " + (best.n || "that player"));
       }
       setFrames(f => f.map((fr, i) => i === step - 1 ? {
         ...fr,
-        [ball.id]: {
-          x: target.x,
-          y: target.y - R - 6
+        _ball: {
+          carrier: best.id
         }
       } : fr));
-      return flash("Ball passed to " + (best.n || best.type));
+      return flash("Passed to " + (best.n || "that player"));
     }
 
     // Curved run: tap the player, the corner they go round, then where they finish.
@@ -4234,6 +4291,7 @@ function BuilderTab({
         age,
         view,
         frames,
+        ball: ballStart,
         desc: meta.desc.trim(),
         points: [meta.p1, meta.p2, meta.p3].filter(x => x.trim()),
         tip: meta.tip.trim(),
@@ -4249,6 +4307,7 @@ function BuilderTab({
       bg,
       items,
       frames,
+      ball: ballStart,
       kind,
       age,
       view,
@@ -4261,6 +4320,7 @@ function BuilderTab({
   const load = d => {
     setHistory([]);
     setFrames(d.frames || []);
+    setBallStart(d.ball || null);
     setStep(0);
     setMoveSel(null);
     setItems(d.items);
@@ -4638,7 +4698,7 @@ function BuilderTab({
       color: pending ? C.gold : C.muted,
       marginBottom: 8
     }
-  }, tool.startsWith("form:") ? "Tap the pitch to drop the whole set piece in, numbered." : tool === "move" ? moveSel !== null ? "Now tap where they end up." : "Tap a player, then tap where they move to." : tool === "curve" ? moveSel === null ? "Tap the player who runs the curve." : !pending ? "Now tap the corner they run around." : "Now tap where they finish." : tool === "ballto" ? "Tap the player who receives the pass. The ball travels to them on this step." : tool === "erase" ? "Tap anything to remove it." : tool === "arc" || tool === "arc2" ? pending ? "Now tap where the run finishes." : "Tap where the run starts, then where it finishes. Use the two arc buttons to bow it either way." : tool === "run" || tool === "pass" ? pending ? "Now tap where it ends." : "Tap where it starts, then where it ends." : tool === "text" ? "Type a label above, then tap the pitch." : "Tap the pitch to place."), /*#__PURE__*/React.createElement("svg", {
+  }, tool.startsWith("form:") ? "Tap the pitch to drop the whole set piece in, numbered." : tool === "move" ? moveSel !== null ? "Now tap where they end up." : "Tap a player, then tap where they move to." : tool === "curve" ? moveSel === null ? "Tap the player who runs the curve." : !pending ? "Now tap the corner they run around." : "Now tap where they finish." : tool === "ballto" ? step === 0 ? "Tap whoever starts with the ball." : "Tap the player who receives the pass. The ball carries with a player until it's passed again." : tool === "erase" ? "Tap anything to remove it." : tool === "arc" || tool === "arc2" ? pending ? "Now tap where the run finishes." : "Tap where the run starts, then where it finishes. Use the two arc buttons to bow it either way." : tool === "run" || tool === "pass" ? pending ? "Now tap where it ends." : "Tap where it starts, then where it ends." : tool === "text" ? "Type a label above, then tap the pitch." : "Tap the pitch to place."), /*#__PURE__*/React.createElement("svg", {
     viewBox: `0 0 ${VW} ${VH}`,
     onClick: tap,
     style: {
@@ -4672,7 +4732,10 @@ function BuilderTab({
     bg: bg,
     age: age,
     view: view
-  }), items.map(it => draw(preview ? it.x2 !== undefined ? posAt(it, frames, Math.round(pt)) : lerpItem(it, frames, pt) : posAt(it, frames, step))), moveSel !== null && (() => {
+  }), items.map(it => draw(preview ? it.x2 !== undefined ? posAt(it, frames, Math.round(pt)) : lerpItem(it, frames, pt) : posAt(it, frames, step))), /*#__PURE__*/React.createElement(BallGlyph, {
+    p: ballPos(items, frames, preview ? pt : step, ballStart, R),
+    R: R
+  }), moveSel !== null && (() => {
     const it = items.find(i => i.id === moveSel);
     if (!it) return null;
     const p = posAt(it, frames, step);
