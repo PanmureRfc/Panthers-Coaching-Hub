@@ -1244,7 +1244,7 @@ const setAllDrills = list => {
   ALL_DRILLS = list;
 };
 const findDrill = id => ALL_DRILLS.find(d => String(d.id) === String(id));
-const APP_VERSION = "v11";
+const APP_VERSION = "v12";
 
 // ── BLOCK 1 ──────────────────────────────────────────────────
 const BLOCKS = {
@@ -1380,7 +1380,8 @@ function Card({
 }
 function DrillBody({
   d,
-  custom
+  custom,
+  note
 }) {
   const mine = (custom || []).filter(c => String(c.drillId) === String(d.id));
   const own = d.items && d.items.length ? [{
@@ -1425,7 +1426,21 @@ function DrillBody({
       lineHeight: 1.6,
       marginBottom: 10
     }
-  }, d.desc), /*#__PURE__*/React.createElement("div", {
+  }, d.desc), note && /*#__PURE__*/React.createElement("div", {
+    style: S.noteBox
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      ...S.microHd,
+      color: C.white,
+      marginBottom: 4
+    }
+  }, "How we run it here"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12.5,
+      color: C.white,
+      lineHeight: 1.6
+    }
+  }, note)), /*#__PURE__*/React.createElement("div", {
     style: S.microHd
   }, "What to say"), d.points.map((p, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
@@ -1629,7 +1644,8 @@ function PlannerTab(props) {
     loadBlock,
     openShare,
     dn,
-    custom
+    custom,
+    noteOf
   } = props;
   const info = SESSION_TYPES[plan.type];
   const total = plan.drills.reduce((s, d) => s + d.dur, 0);
@@ -1948,7 +1964,8 @@ function PlannerTab(props) {
     style: S.catPill
   }, d.cat)), /*#__PURE__*/React.createElement(DrillBody, {
     d: d,
-    custom: custom
+    custom: custom,
+    note: noteOf(d)
   })), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
@@ -2302,9 +2319,13 @@ function LibraryTab({
   age,
   agesOf,
   addToAge,
-  removeFromAge
+  removeFromAge,
+  noteOf,
+  setNote
 }) {
   const [showOthers, setShowOthers] = useState(false);
+  const [noteFor, setNoteFor] = useState(null);
+  const [noteDraft, setNoteDraft] = useState("");
   const otherList = cat === "All" ? others || [] : (others || []).filter(d => d.cat === cat);
   const [editing, setEditing] = useState(null);
   const [draft, setDraft] = useState("");
@@ -2446,8 +2467,66 @@ function LibraryTab({
     }
   }, "Delete drill")), /*#__PURE__*/React.createElement(DrillBody, {
     d: d,
-    custom: custom
-  }), /*#__PURE__*/React.createElement("button", {
+    custom: custom,
+    note: noteOf(d)
+  }), noteFor === d.id ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: S.microHd
+  }, "How we run it at ", findAge(age).label), /*#__PURE__*/React.createElement("textarea", {
+    value: noteDraft,
+    onChange: e => setNoteDraft(e.target.value),
+    autoFocus: true,
+    placeholder: "Bigger pitch, add a defender, two balls…",
+    style: {
+      ...S.input,
+      height: 70,
+      resize: "vertical"
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10.5,
+      color: C.muted,
+      margin: "5px 0 8px",
+      lineHeight: 1.5
+    }
+  }, "Change the Space, Task, Equipment or People — same drill, right level."), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      flexWrap: "wrap"
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      setNote(d, noteDraft.trim());
+      setNoteFor(null);
+    },
+    style: {
+      ...S.btnPrimary,
+      fontSize: 11,
+      padding: "7px 11px"
+    }
+  }, "Save"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setNoteFor(null),
+    style: {
+      ...S.btnGhost,
+      fontSize: 11,
+      padding: "7px 11px"
+    }
+  }, "Cancel"))) : /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      setNoteFor(d.id);
+      setNoteDraft(noteOf(d));
+    },
+    style: {
+      ...S.btnGhost,
+      fontSize: 10.5,
+      padding: "5px 10px",
+      marginTop: 8
+    }
+  }, noteOf(d) ? `Edit the ${findAge(age).label} version` : `Add a ${findAge(age).label} version`), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       addDrill(d);
       goPlanner();
@@ -4151,6 +4230,7 @@ function App() {
   const [hidden, setHidden] = useState([]);
   const [myDrills, setMyDrills] = useState([]);
   const [drillAges, setDrillAges] = useState({});
+  const [drillNotes, setDrillNotes] = useState({});
   const [toast, setToast] = useState("");
   const [diagrams, setDiagrams] = useState([]);
   const [shareText, setShareText] = useState(null);
@@ -4188,6 +4268,12 @@ function App() {
         setDrillAges(da?.value ? JSON.parse(da.value) : {});
       } catch {
         setDrillAges({});
+      }
+      try {
+        const dnt = await window.storage.get("panthers-drill-notes", true);
+        setDrillNotes(dnt?.value ? JSON.parse(dnt.value) : {});
+      } catch {
+        setDrillNotes({});
       }
       try {
         const n = await window.storage.get(`panthers-drill-names-${age}`, true);
@@ -4310,6 +4396,24 @@ function App() {
     } catch {
       flash("Saved on this device only");
     }
+  };
+  const noteOf = d => d && drillNotes[d.id] ? drillNotes[d.id][age] || "" : "";
+  const setNote = async (d, text) => {
+    const next = {
+      ...drillNotes,
+      [d.id]: {
+        ...(drillNotes[d.id] || {}),
+        [age]: text
+      }
+    };
+    if (!text) delete next[d.id][age];
+    setDrillNotes(next);
+    try {
+      await window.storage.set("panthers-drill-notes", JSON.stringify(next), true);
+    } catch {
+      flash("Saved on this device only");
+    }
+    flash(text ? `Saved for ${findAge(age).label}` : "Note removed");
   };
   const addToAge = d => {
     setAges(d, [...new Set([...agesOf(d), age])]);
@@ -4444,7 +4548,8 @@ function App() {
     loadBlock,
     openShare: () => share(plan),
     dn,
-    custom: diagrams
+    custom: diagrams,
+    noteOf
   }), tab === "visuals" && /*#__PURE__*/React.createElement(VisualsTab, {
     sel: sel,
     setSel: setSel,
@@ -4487,7 +4592,9 @@ function App() {
     age: age,
     agesOf: agesOf,
     addToAge: addToAge,
-    removeFromAge: removeFromAge
+    removeFromAge: removeFromAge,
+    noteOf: noteOf,
+    setNote: setNote
   }), tab === "saved" && /*#__PURE__*/React.createElement(SavedTab, {
     plans: plans,
     loadPlan: p => {
@@ -4701,6 +4808,12 @@ const S = {
     borderRadius: 8,
     padding: 12,
     marginTop: 14
+  },
+  noteBox: {
+    background: C.maroon,
+    borderRadius: 3,
+    padding: "9px 11px",
+    marginBottom: 10
   },
   pointsBox: {
     background: C.maroon,
