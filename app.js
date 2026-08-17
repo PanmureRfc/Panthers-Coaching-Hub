@@ -1244,7 +1244,7 @@ const setAllDrills = list => {
   ALL_DRILLS = list;
 };
 const findDrill = id => ALL_DRILLS.find(d => String(d.id) === String(id));
-const APP_VERSION = "v10";
+const APP_VERSION = "v11";
 
 // ── BLOCK 1 ──────────────────────────────────────────────────
 const BLOCKS = {
@@ -2297,8 +2297,15 @@ function LibraryTab({
   rename,
   custom,
   drills,
-  deleteDrill
+  others,
+  deleteDrill,
+  age,
+  agesOf,
+  addToAge,
+  removeFromAge
 }) {
+  const [showOthers, setShowOthers] = useState(false);
+  const otherList = cat === "All" ? others || [] : (others || []).filter(d => d.cat === cat);
   const [editing, setEditing] = useState(null);
   const [draft, setDraft] = useState("");
   const list = cat === "All" ? drills : drills.filter(d => d.cat === cat);
@@ -2412,7 +2419,16 @@ function LibraryTab({
       color: C.muted,
       marginTop: 5
     }
-  }, "Originally: ", d.name), d.mine && editing !== d.id && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
+  }, "Originally: ", d.name), editing !== d.id && /*#__PURE__*/React.createElement("button", {
+    onClick: () => removeFromAge(d),
+    style: {
+      ...S.btnGhost,
+      fontSize: 10.5,
+      padding: "5px 10px",
+      marginTop: 6,
+      marginLeft: 6
+    }
+  }, "Not for ", findAge(age).label), d.mine && editing !== d.id && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
     style: {
       ...S.badge,
       marginLeft: 6,
@@ -2441,7 +2457,89 @@ function LibraryTab({
       marginTop: 12,
       width: "100%"
     }
-  }, "Add to plan"))))));
+  }, "Add to plan")))), (others || []).length > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 22,
+      borderTop: `1px solid ${C.line}`,
+      paddingTop: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      flexWrap: "wrap",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      ...S.cardHd,
+      marginBottom: 2
+    }
+  }, "Other age groups"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: C.muted
+    }
+  }, (others || []).length, " drill", (others || []).length === 1 ? "" : "s", " the other groups use. Add any of them to ", findAge(age).label, ".")), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setShowOthers(!showOthers),
+    style: S.btnGhost
+  }, showOthers ? "Hide" : "Show")), showOthers && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))",
+      gap: 12,
+      marginTop: 14
+    }
+  }, otherList.map(d => /*#__PURE__*/React.createElement("div", {
+    key: d.id,
+    style: {
+      ...S.libCard,
+      opacity: 0.9
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      gap: 8,
+      alignItems: "flex-start"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 700,
+      fontSize: 14,
+      color: C.text
+    }
+  }, dn(d)), /*#__PURE__*/React.createElement("span", {
+    style: S.durPill
+  }, d.dur, "m")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: C.gold,
+      marginTop: 4,
+      textTransform: "uppercase",
+      letterSpacing: 1
+    }
+  }, d.cat, " · used by ", agesOf(d).map(a => findAge(a).label).join(", ") || "nobody"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12.5,
+      color: C.tan,
+      lineHeight: 1.6,
+      margin: "8px 0"
+    }
+  }, d.desc), /*#__PURE__*/React.createElement("button", {
+    onClick: () => addToAge(d),
+    style: {
+      ...S.btnPrimary,
+      width: "100%",
+      fontSize: 11.5
+    }
+  }, "Add to ", findAge(age).label))), otherList.length === 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12.5,
+      color: C.muted
+    }
+  }, "Nothing in this category from the other groups.")))));
 }
 function SavedTab({
   plans,
@@ -4052,6 +4150,7 @@ function App() {
   const [seed, setSeed] = useState(null);
   const [hidden, setHidden] = useState([]);
   const [myDrills, setMyDrills] = useState([]);
+  const [drillAges, setDrillAges] = useState({});
   const [toast, setToast] = useState("");
   const [diagrams, setDiagrams] = useState([]);
   const [shareText, setShareText] = useState(null);
@@ -4078,7 +4177,18 @@ function App() {
       await loadKey("panthers-sessions", setPlans, first);
       await loadKey("panthers-diagrams", setDiagrams, first);
       await loadKey("panthers-hidden", setHidden, first);
-      await loadKey("panthers-my-drills", setMyDrills, first);
+      try {
+        const md = await window.storage.get("panthers-my-drills", true);
+        setMyDrills(md?.value ? JSON.parse(md.value) : []);
+      } catch {
+        setMyDrills([]);
+      }
+      try {
+        const da = await window.storage.get("panthers-drill-ages", true);
+        setDrillAges(da?.value ? JSON.parse(da.value) : {});
+      } catch {
+        setDrillAges({});
+      }
       try {
         const n = await window.storage.get(`panthers-drill-names-${age}`, true);
         setNames(n?.value ? JSON.parse(n.value) : {});
@@ -4162,7 +4272,7 @@ function App() {
   const persistDrills = async next => {
     setMyDrills(next);
     try {
-      await window.storage.set(`panthers-my-drills-${age}`, JSON.stringify(next), true);
+      await window.storage.set("panthers-my-drills", JSON.stringify(next), true);
     } catch {
       flash("Saved on this device only");
     }
@@ -4185,7 +4295,30 @@ function App() {
     });
     setTab("builder");
   };
-  const allDrills = [...DRILLS.filter(d => !d.ages || d.ages.includes(age)), ...myDrills];
+  const agesOf = d => drillAges[d.id] || d.ages || ["u10", "u12"];
+  const everyDrill = [...DRILLS, ...myDrills];
+  const allDrills = everyDrill.filter(d => agesOf(d).includes(age));
+  const otherDrills = everyDrill.filter(d => !agesOf(d).includes(age));
+  const setAges = async (d, list) => {
+    const next = {
+      ...drillAges,
+      [d.id]: list
+    };
+    setDrillAges(next);
+    try {
+      await window.storage.set("panthers-drill-ages", JSON.stringify(next), true);
+    } catch {
+      flash("Saved on this device only");
+    }
+  };
+  const addToAge = d => {
+    setAges(d, [...new Set([...agesOf(d), age])]);
+    flash(`Added to ${findAge(age).label}`);
+  };
+  const removeFromAge = d => {
+    setAges(d, agesOf(d).filter(a => a !== age));
+    flash(`Removed from ${findAge(age).label}`);
+  };
   setAllDrills(allDrills);
   const dn = d => d ? names[d.id] || d.name : "";
   const rename = async (id, custom) => {
@@ -4349,7 +4482,12 @@ function App() {
     rename: rename,
     custom: diagrams,
     drills: allDrills,
-    deleteDrill: deleteDrill
+    others: otherDrills,
+    deleteDrill: deleteDrill,
+    age: age,
+    agesOf: agesOf,
+    addToAge: addToAge,
+    removeFromAge: removeFromAge
   }), tab === "saved" && /*#__PURE__*/React.createElement(SavedTab, {
     plans: plans,
     loadPlan: p => {
