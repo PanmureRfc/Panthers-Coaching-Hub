@@ -1335,7 +1335,7 @@ const setAllDrills = list => {
   ALL_DRILLS = list;
 };
 const findDrill = id => ALL_DRILLS.find(d => String(d.id) === String(id));
-const APP_VERSION = "v15";
+const APP_VERSION = "v16";
 
 // ── BLOCK 1 ──────────────────────────────────────────────────
 const BLOCKS = {
@@ -3022,16 +3022,18 @@ function drawItem(it) {
         y2: it.y2,
         stroke: IC.run,
         strokeWidth: 2.6,
+        strokeDasharray: it.dash ? "8,5" : undefined,
         markerEnd: "url(#bag)"
       });
     case "arc":
+    case "arc2":
       {
         const mx = (it.x + it.x2) / 2,
           my = (it.y + it.y2) / 2;
         const dx = it.x2 - it.x,
           dy = it.y2 - it.y;
         const len = Math.max(1, Math.hypot(dx, dy));
-        const bow = Math.min(46, len * 0.45);
+        const bow = Math.min(48, len * 0.45) * (it.type === "arc2" ? -1 : 1);
         const cx = mx - dy / len * bow,
           cy = my + dx / len * bow;
         return /*#__PURE__*/React.createElement("path", {
@@ -3040,6 +3042,7 @@ function drawItem(it) {
           fill: "none",
           stroke: IC.run,
           strokeWidth: 2.6,
+          strokeDasharray: it.dash ? "8,5" : undefined,
           markerEnd: "url(#bag)"
         });
       }
@@ -3670,6 +3673,9 @@ const IC = {
 };
 // Set piece shapes, correct numbers for each age group.
 // Offsets are in canvas units from where the coach taps.
+// Set piece shapes, correct numbers for each age group.
+// Pitch is drawn attacking right, so a scrum's axis runs left-right
+// and a lineout runs down from the touchline into the field.
 const FORMATIONS = {
   scrumAttack: {
     label: "Scrum — ours",
@@ -3678,11 +3684,11 @@ const FORMATIONS = {
       u14: 8
     },
     shape: n => {
-      const front = [["1", -18, -14], ["2", 0, -16], ["3", 18, -14]];
-      const second = [["4", -9, 4], ["5", 9, 4]];
-      const back = [["6", -26, 10], ["7", 26, 10], ["8", 0, 22]];
-      const rows = n >= 8 ? front.concat(second, back) : front.concat(second);
-      return rows.concat([["9", -34, 26]]);
+      // front row on the right of our pack, pushing towards their line
+      const rows = [["1", 0, -15], ["2", 0, 0], ["3", 0, 15], ["4", -20, -8], ["5", -20, 8]];
+      if (n >= 8) rows.push(["6", -17, -28], ["7", -17, 28], ["8", -38, 0]);
+      rows.push(["9", n >= 8 ? -50 : -34, 26]);
+      return rows;
     }
   },
   scrumDefend: {
@@ -3692,20 +3698,28 @@ const FORMATIONS = {
       u14: 8
     },
     shape: n => {
-      const front = [["1", -18, 14], ["2", 0, 16], ["3", 18, 14]];
-      const second = [["4", -9, -4], ["5", 9, -4]];
-      const back = [["6", -26, -10], ["7", 26, -10], ["8", 0, -22]];
-      const rows = n >= 8 ? front.concat(second, back) : front.concat(second);
-      return rows.concat([["9", 34, -26]]);
+      // mirrored — their front row faces ours
+      const rows = [["1", 0, 15], ["2", 0, 0], ["3", 0, -15], ["4", 20, 8], ["5", 20, -8]];
+      if (n >= 8) rows.push(["6", 17, 28], ["7", 17, -28], ["8", 38, 0]);
+      rows.push(["9", n >= 8 ? 50 : 34, -26]);
+      return rows;
     }
   },
-  lineout: {
+  lineoutAttack: {
     label: "Lineout — ours",
     ages: {
       u12: 5,
       u14: 5
     },
-    shape: () => [["2", -34, 0], ["1", 0, 0], ["3", 22, 0], ["4", 44, 0], ["5", 66, 0], ["9", 52, 26]]
+    shape: () => [["2", 0, -34], ["1", 0, 0], ["3", 0, 21], ["4", 0, 42], ["5", 0, 63], ["9", -26, 50]]
+  },
+  lineoutDefend: {
+    label: "Lineout — theirs",
+    ages: {
+      u12: 5,
+      u14: 5
+    },
+    shape: () => [["1", 0, 0], ["3", 0, 21], ["4", 0, 42], ["5", 0, 63], ["9", 26, 50], ["2", 26, -20]]
   }
 };
 const TOOLS = [{
@@ -3741,6 +3755,10 @@ const TOOLS = [{
   label: "Arc ↷",
   c: IC.run
 }, {
+  k: "arc2",
+  label: "Arc ↶",
+  c: IC.run
+}, {
   k: "pass",
   label: "Pass ⇢",
   c: IC.pass
@@ -3774,6 +3792,7 @@ function BuilderTab({
   const [view, setView] = useState("full");
   const [platform, setPlatform] = useState("");
   const [zone, setZone] = useState("");
+  const [dashed, setDashed] = useState(false);
   const [drillId, setDrillId] = useState("");
   const [meta, setMeta] = useState({
     cat: "Handling",
@@ -3830,7 +3849,7 @@ function BuilderTab({
       if (best !== null) setItems(a => a.filter(it => it.id !== best));
       return;
     }
-    if (tool === "run" || tool === "pass" || tool === "arc") {
+    if (tool === "run" || tool === "pass" || tool === "arc" || tool === "arc2") {
       if (!pending) {
         setPending({
           x,
@@ -3844,7 +3863,8 @@ function BuilderTab({
         x: pending.x,
         y: pending.y,
         x2: x,
-        y2: y
+        y2: y,
+        dash: dashed
       }]);
       setPending(null);
       return;
@@ -3855,7 +3875,7 @@ function BuilderTab({
       const n = f.ages[age] || 5;
       const stamp = f.shape(n).map(([label, dx, dy], i) => ({
         id: Date.now() + i,
-        type: key === "scrumDefend" ? "numD" : "num",
+        type: key.endsWith("Defend") ? "numD" : "num",
         x: x + dx,
         y: y + dy,
         n: label
@@ -4008,16 +4028,18 @@ function BuilderTab({
           y2: it.y2,
           stroke: IC.run,
           strokeWidth: 2.6,
+          strokeDasharray: it.dash ? "8,5" : undefined,
           markerEnd: "url(#bag)"
         });
       case "arc":
+      case "arc2":
         {
           const mx = (it.x + it.x2) / 2,
             my = (it.y + it.y2) / 2;
           const dx = it.x2 - it.x,
             dy = it.y2 - it.y;
           const len = Math.max(1, Math.hypot(dx, dy));
-          const bow = Math.min(46, len * 0.45);
+          const bow = Math.min(48, len * 0.45) * (it.type === "arc2" ? -1 : 1);
           const cx = mx - dy / len * bow,
             cy = my + dx / len * bow;
           return /*#__PURE__*/React.createElement("path", {
@@ -4026,6 +4048,7 @@ function BuilderTab({
             fill: "none",
             stroke: IC.run,
             strokeWidth: 2.6,
+            strokeDasharray: it.dash ? "8,5" : undefined,
             markerEnd: "url(#bag)"
           });
         }
@@ -4101,7 +4124,18 @@ function BuilderTab({
       background: t.c,
       border: "1px solid rgba(0,0,0,0.35)"
     }
-  }), t.label))), tool === "text" && /*#__PURE__*/React.createElement("input", {
+  }), t.label))), (tool === "run" || tool === "arc" || tool === "arc2") && /*#__PURE__*/React.createElement("button", {
+    onClick: () => setDashed(!dashed),
+    style: {
+      ...S.catBtn,
+      padding: "7px 12px",
+      marginBottom: 10,
+      background: dashed ? C.gold : C.panel2,
+      color: dashed ? "#000" : C.text,
+      border: `1px solid ${dashed ? C.gold : C.line}`,
+      fontWeight: 700
+    }
+  }, dashed ? "Dashed ✓" : "Dashed"), tool === "text" && /*#__PURE__*/React.createElement("input", {
     value: labelText,
     onChange: e => setLabelText(e.target.value),
     placeholder: "Type the label, then tap the pitch",
@@ -4162,7 +4196,7 @@ function BuilderTab({
       color: pending ? C.gold : C.muted,
       marginBottom: 8
     }
-  }, tool.startsWith("form:") ? "Tap the pitch to drop the whole set piece in, numbered." : tool === "erase" ? "Tap anything to remove it." : tool === "arc" ? pending ? "Now tap where the run finishes." : "Tap where the run starts, then where it finishes. It bows to one side — tap the ends the other way round to bow it the other way." : tool === "run" || tool === "pass" ? pending ? "Now tap where it ends." : "Tap where it starts, then where it ends." : tool === "text" ? "Type a label above, then tap the pitch." : "Tap the pitch to place."), /*#__PURE__*/React.createElement("svg", {
+  }, tool.startsWith("form:") ? "Tap the pitch to drop the whole set piece in, numbered." : tool === "erase" ? "Tap anything to remove it." : tool === "arc" || tool === "arc2" ? pending ? "Now tap where the run finishes." : "Tap where the run starts, then where it finishes. Use the two arc buttons to bow it either way." : tool === "run" || tool === "pass" ? pending ? "Now tap where it ends." : "Tap where it starts, then where it ends." : tool === "text" ? "Type a label above, then tap the pitch." : "Tap the pitch to place."), /*#__PURE__*/React.createElement("svg", {
     viewBox: `0 0 ${VW} ${VH}`,
     onClick: tap,
     style: {
