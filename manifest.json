@@ -1,7 +1,7 @@
 {
-  "name": "Panmure Panthers U10",
+  "name": "Panmure Panthers Coaching Hub",
   "short_name": "Panthers",
-  "description": "Session plans, drills, laws and pitch diagrams for Panmure Panthers U10.",
+  "description": "Session plans, drills, laws, pitch diagrams and animated plays for every Panmure Panthers age group.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

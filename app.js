@@ -1335,7 +1335,7 @@ const setAllDrills = list => {
   ALL_DRILLS = list;
 };
 const findDrill = id => ALL_DRILLS.find(d => String(d.id) === String(id));
-const APP_VERSION = "v23";
+const APP_VERSION = "v24";
 
 // ── BLOCK 1 ──────────────────────────────────────────────────
 const BLOCKS = {
@@ -3973,6 +3973,7 @@ function BuilderTab({
   const [preview, setPreview] = useState(false);
   const [pt, setPt] = useState(0);
   const [ballStart, setBallStart] = useState(null);
+  const [showHelp, setShowHelp] = useState(false);
   useEffect(() => {
     if (!preview || frames.length === 0) return;
     let raf,
@@ -4451,7 +4452,55 @@ function BuilderTab({
     style: {
       padding: 14
     }
+  }, /*#__PURE__*/React.createElement(Card, {
+    style: {
+      marginBottom: 14
+    }
   }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: 10,
+      flexWrap: "wrap"
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      ...S.cardHd,
+      marginBottom: 2
+    }
+  }, "How to build an animated play"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: C.muted
+    }
+  }, "Worth a read the first time. Takes two minutes.")), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setShowHelp(!showHelp),
+    style: S.btnGhost
+  }, showHelp ? "Hide" : "Show me")), showHelp && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 14,
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fill,minmax(260px,1fr))",
+      gap: 12
+    }
+  }, [["1. Set the scene", "Pick the view first — Our third, Middle third or Their third for a set play, Full pitch for a whole-field move. Then drop in a scrum or lineout with one tap, and add the backs with the Player tool. Type a number in the box to control who's who."], ["2. Say who has the ball", "Choose Pass to and tap whoever starts with it. The ball then follows that player wherever they go — you never have to move it by hand."], ["3. Add a step", "Tap + Add step. This is the next moment of the play. Anyone you don't move stays exactly where they were, so a fifteen-man move only needs the two or three players who actually go anywhere."], ["4. Move the players", "Move: tap a player, tap where they end up. Curved run: tap the player, tap the corner they run around, then where they finish — for a looping run or coming round the corner."], ["5. Pass it on", "On any step after the first, Pass to a different player and the ball travels between them. Add another step and keep going. One step per moment of the play."], ["6. Watch it", "▶ Play it runs the whole thing. Step through with ◀ ▶ to check positions. Undo steps back one whole action, so a stamped scrum comes out in one tap."], ["7. Save it properly", "Set What is it? to Team setup, or it lands in the Drills tab instead of Plays. Say what it starts from — scrum, lineout, penalty — and which third. That's how the Plays tab groups it so people can find it."], ["On the touchline", "In the Plays tab there's a scrubber under the animation. Drag it to freeze the play at the decision point and ask them what they'd do next. That's usually worth more than letting it run."]].map(([t, b]) => /*#__PURE__*/React.createElement("div", {
+    key: t,
+    style: S.libCard
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 700,
+      color: C.gold,
+      fontSize: 13.5,
+      marginBottom: 5
+    }
+  }, t), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12.5,
+      color: C.tan,
+      lineHeight: 1.65
+    }
+  }, b))))), /*#__PURE__*/React.createElement("div", {
     style: S.cols
   }, /*#__PURE__*/React.createElement("div", {
     style: S.colWide
