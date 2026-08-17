@@ -1335,7 +1335,7 @@ const setAllDrills = list => {
   ALL_DRILLS = list;
 };
 const findDrill = id => ALL_DRILLS.find(d => String(d.id) === String(id));
-const APP_VERSION = "v21";
+const APP_VERSION = "v22";
 
 // ── BLOCK 1 ──────────────────────────────────────────────────
 const BLOCKS = {
@@ -2982,6 +2982,16 @@ function lerpItem(it, frames, t) {
   const f = t - i;
   const a = posAt(it, frames, i),
     b = posAt(it, frames, i + 1);
+  const via = (frames || [])[i] && frames[i][it.id];
+  if (via && via.cx !== undefined) {
+    // quadratic curve, so a player can run round the corner
+    const u = 1 - f;
+    return {
+      ...it,
+      x: u * u * a.x + 2 * u * f * via.cx + f * f * b.x,
+      y: u * u * a.y + 2 * u * f * via.cy + f * f * b.y
+    };
+  }
   return {
     ...it,
     x: a.x + (b.x - a.x) * f,
@@ -3847,7 +3857,7 @@ const TOOLS = [{
   c: IC.run
 }, {
   k: "pass",
-  label: "Pass ⇢",
+  label: "Pass line ⇢",
   c: IC.pass
 }, {
   k: "text",
@@ -3857,6 +3867,14 @@ const TOOLS = [{
   k: "move",
   label: "Move",
   c: IC.num
+}, {
+  k: "curve",
+  label: "Curved run",
+  c: IC.num
+}, {
+  k: "ballto",
+  label: "Pass to",
+  c: IC.ball
 }, {
   k: "erase",
   label: "Erase",
@@ -3955,6 +3973,85 @@ function BuilderTab({
       x,
       y
     } = coords(e);
+    // Pass: tap the player who receives it, and the ball travels to them.
+    if (tool === "ballto") {
+      if (step === 0) return flash("Add a step first — a pass happens between steps");
+      let best = null,
+        bestD = (R + 12) ** 2;
+      items.forEach(it => {
+        if (it.type !== "num" && it.type !== "numD" && it.type !== "A" && it.type !== "D" && it.type !== "nine") return;
+        const p = posAt(it, frames, step);
+        const d = (p.x - x) ** 2 + (p.y - y) ** 2;
+        if (d < bestD) {
+          bestD = d;
+          best = it;
+        }
+      });
+      if (!best) return flash("Tap the player who receives the pass");
+      const target = posAt(best, frames, step);
+      let ball = items.find(i => i.type === "ball");
+      setHistory(h => [...h.slice(-40), items]);
+      if (!ball) {
+        ball = {
+          id: Date.now(),
+          type: "ball",
+          x: target.x,
+          y: target.y - R - 6
+        };
+        setItems(a => [...a, ball]);
+      }
+      setFrames(f => f.map((fr, i) => i === step - 1 ? {
+        ...fr,
+        [ball.id]: {
+          x: target.x,
+          y: target.y - R - 6
+        }
+      } : fr));
+      return flash("Ball passed to " + (best.n || best.type));
+    }
+
+    // Curved run: tap the player, the corner they go round, then where they finish.
+    if (tool === "curve") {
+      if (moveSel === null) {
+        let best = null,
+          bestD = (R + 10) ** 2;
+        items.forEach(it => {
+          const p = posAt(it, frames, step);
+          const d = (p.x - x) ** 2 + (p.y - y) ** 2;
+          if (d < bestD) {
+            bestD = d;
+            best = it.id;
+          }
+        });
+        if (best === null) return flash("Tap a player to give them a curved run");
+        if (step === 0) return flash("Add a step first, then set the curved run");
+        setMoveSel(best);
+        setPending(null);
+        return;
+      }
+      if (!pending) {
+        setPending({
+          x,
+          y
+        });
+        return;
+      }
+      const id = moveSel,
+        via = pending;
+      setMoveSel(null);
+      setPending(null);
+      setHistory(h => [...h.slice(-40), items]);
+      setFrames(f => f.map((fr, i) => i === step - 1 ? {
+        ...fr,
+        [id]: {
+          x,
+          y,
+          cx: via.x,
+          cy: via.y
+        }
+      } : fr));
+      return;
+    }
     if (tool === "move") {
       if (moveSel === null) {
         let best = null,
@@ -4541,7 +4638,7 @@ function BuilderTab({
       color: pending ? C.gold : C.muted,
       marginBottom: 8
     }
-  }, tool.startsWith("form:") ? "Tap the pitch to drop the whole set piece in, numbered." : tool === "move" ? moveSel !== null ? "Now tap where they end up." : "Tap a player, then tap where they move to." : tool === "erase" ? "Tap anything to remove it." : tool === "arc" || tool === "arc2" ? pending ? "Now tap where the run finishes." : "Tap where the run starts, then where it finishes. Use the two arc buttons to bow it either way." : tool === "run" || tool === "pass" ? pending ? "Now tap where it ends." : "Tap where it starts, then where it ends." : tool === "text" ? "Type a label above, then tap the pitch." : "Tap the pitch to place."), /*#__PURE__*/React.createElement("svg", {
+  }, tool.startsWith("form:") ? "Tap the pitch to drop the whole set piece in, numbered." : tool === "move" ? moveSel !== null ? "Now tap where they end up." : "Tap a player, then tap where they move to." : tool === "curve" ? moveSel === null ? "Tap the player who runs the curve." : !pending ? "Now tap the corner they run around." : "Now tap where they finish." : tool === "ballto" ? "Tap the player who receives the pass. The ball travels to them on this step." : tool === "erase" ? "Tap anything to remove it." : tool === "arc" || tool === "arc2" ? pending ? "Now tap where the run finishes." : "Tap where the run starts, then where it finishes. Use the two arc buttons to bow it either way." : tool === "run" || tool === "pass" ? pending ? "Now tap where it ends." : "Tap where it starts, then where it ends." : tool === "text" ? "Type a label above, then tap the pitch." : "Tap the pitch to place."), /*#__PURE__*/React.createElement("svg", {
     viewBox: `0 0 ${VW} ${VH}`,
     onClick: tap,
     style: {
